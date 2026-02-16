@@ -386,7 +386,8 @@
           },
           "type": "edge"
         }
-      ]
+      ],
+      "test_path": ".codevalid/tests/task_9275148306_20240618235959/service_create_task.py"
     },
     {
       "implementation_id": "repository_add_task",
@@ -511,7 +512,8 @@
           },
           "type": "negative"
         }
-      ]
+      ],
+      "test_path": ".codevalid/tests/task_9275148306_20240618235959/repository_add_task.py"
     }
   ],
   "component": [],
@@ -1073,7 +1075,8 @@
           },
           "type": "negative"
         }
-      ]
+      ],
+      "test_path": ".codevalid/tests/task_9275148306_20240618235959/endpoint_create_task.py"
     }
   ]
 }
