@@ -3,7 +3,7 @@
     "implementation": [
       {
         "How_is_it_connected_to_implementation": "Defines the REST API endpoint for creating a new task. Receives TaskCreate input and delegates creation to the TaskService.",
-        "change_type": "new",
+        "change_type": "unchanged",
         "file_path": "app/controllers/task_controller.py",
         "id": "endpoint_create_task",
         "name": "POST /tasks",
@@ -12,7 +12,7 @@
       },
       {
         "How_is_it_connected_to_implementation": "Implements business logic for creating a task. Logs the operation and delegates to TaskRepository for persistence.",
-        "change_type": "new",
+        "change_type": "unchanged",
         "file_path": "app/services/task_service.py",
         "id": "service_create_task",
         "name": "TaskService.create_task",
@@ -21,7 +21,7 @@
       },
       {
         "How_is_it_connected_to_implementation": "Handles persistence of the new task. Assigns an ID, saves to file, and returns the Task object.",
-        "change_type": "new",
+        "change_type": "unchanged",
         "file_path": "app/repositories/task_repository.py",
         "id": "repository_add_task",
         "name": "TaskRepository.add_task",
