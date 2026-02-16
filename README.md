@@ -8,5 +8,4 @@ Personal Todo manager
   - Description
   - Priority
   - Due date
-  - User_name    
-  - location
+  - User_name
