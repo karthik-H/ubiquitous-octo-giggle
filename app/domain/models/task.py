@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date
+from typing import Optional
 
 class TaskCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=100)
@@ -7,6 +8,7 @@ class TaskCreate(BaseModel):
     priority: int = Field(..., ge=1, le=5)
     due_date: date
     user_name: str = Field(..., min_length=1, max_length=50)
+    location: Optional[str] = None
 
 class Task(TaskCreate):
     id: int
