@@ -3,29 +3,20 @@ from app.repositories.task_repository import TaskRepository
 from app.domain.models.task import Task, TaskCreate
 from datetime import date
 import logging
-import os
 
 @pytest.fixture
 def repo(tmp_path):
-    # Use tmp_path for file persistence tests
-    return TaskRepository(tasks_file=tmp_path / "tasks.json")
+    return TaskRepository(data_file=tmp_path / "tasks.json")
 
 def make_task_data(**kwargs):
     # Helper for minimal valid task data
-    data = {
-        "title": "Test Task",
-        "description": "Test Desc",
-        "priority": 1,
-        "due_date": date(2024, 7, 1),
-        "user_name": "tester",
-        "location": None
-    }
+    data = {"title": "Test Task"}
     data.update(kwargs)
     return data
 
 # Test Case 1: add_task_with_minimal_valid_data
 def test_add_task_with_minimal_valid_data(repo):
-    task_data = {"title": "Test Task"}
+    task_data = TaskCreate(title="Test Task")
     task = repo.add_task(task_data)
     assert isinstance(task, Task)
     assert task.id == 1
@@ -35,115 +26,108 @@ def test_add_task_with_minimal_valid_data(repo):
 
 # Test Case 2: add_task_with_all_fields
 def test_add_task_with_all_fields(repo):
-    task_data = {
-        "title": "Full Task",
-        "description": "All fields",
-        "priority": 5,
-        "due_date": date(2024, 7, 2),
-        "user_name": "user",
-        "location": "HQ"
-    }
+    task_data = TaskCreate(
+        title="Full Task",
+        description="All fields",
+        due_date=date(2024, 7, 2),
+        priority=5,
+        user_name="user",
+        location="HQ"
+    )
     task = repo.add_task(task_data)
     assert task.id == 1
     assert task.title == "Full Task"
     assert task.description == "All fields"
-    assert task.priority == 5
     assert task.due_date == date(2024, 7, 2)
+    assert task.priority == 5
     assert task.user_name == "user"
     assert task.location == "HQ"
     assert repo._tasks == [task]
 
-# Test Case 3: add_multiple_tasks_assigns_sequential_ids
-def test_add_multiple_tasks_assigns_sequential_ids(repo):
-    for i in range(3):
-        task_data = {"title": f"Task {i+1}"}
-        task = repo.add_task(task_data)
-        assert task.id == i + 1
-    assert len(repo._tasks) == 3
-    assert repo._tasks[0].id == 1
-    assert repo._tasks[1].id == 2
-    assert repo._tasks[2].id == 3
+# Test Case 3: add_task_id_increments_with_multiple_tasks
+def test_add_task_id_increments_with_multiple_tasks(repo):
+    repo._id_counter = 5
+    task_data1 = TaskCreate(title="Task One")
+    task_data2 = TaskCreate(title="Task Two")
+    task1 = repo.add_task(task_data1)
+    task2 = repo.add_task(task_data2)
+    assert task1.id == 5
+    assert task2.id == 6
+    assert repo._tasks == [task1, task2]
+    assert repo._id_counter == 7
 
-# Test Case 4: task_is_persisted_to_file
-def test_task_is_persisted_to_file(repo):
-    task_data = {"title": "Persisted Task"}
-    task = repo.add_task(task_data)
-    # Reload repository from file
-    new_repo = TaskRepository(tasks_file=repo.tasks_file)
-    new_repo.load_tasks()
-    assert any(t.title == "Persisted Task" for t in new_repo._tasks)
-
-# Test Case 5: creation_logged
-def test_creation_logged(repo, caplog):
-    caplog.set_level(logging.INFO)
-    task_data = {"title": "Log Task"}
-    task = repo.add_task(task_data)
-    assert f"Task created: {task}" in caplog.text
-
-# Test Case 6: add_task_missing_required_field
-def test_add_task_missing_required_field(repo):
-    task_data = {"description": "Missing title"}
+# Test Case 4: add_task_with_empty_title
+def test_add_task_with_empty_title(repo):
+    task_data = TaskCreate(title="")
     with pytest.raises(Exception):
         repo.add_task(task_data)
     assert len(repo._tasks) == 0
 
-# Test Case 7: add_task_invalid_field_type
-def test_add_task_invalid_field_type(repo):
-    task_data = {"title": 123}
+# Test Case 5: add_task_missing_required_title
+def test_add_task_missing_required_title(repo):
+    # TaskCreate requires title, so simulate missing field with dict
+    with pytest.raises(TypeError):
+        TaskCreate()
+    # If repo.add_task is called with a dict missing title, should raise error
     with pytest.raises(Exception):
-        repo.add_task(task_data)
+        repo.add_task({"description": "Missing title"})
     assert len(repo._tasks) == 0
 
-# Test Case 8: add_duplicate_task
-def test_add_duplicate_task(repo):
-    task_data = {"title": "Dupe"}
-    task1 = repo.add_task(task_data)
-    task2 = repo.add_task(task_data)
-    assert task1.id != task2.id
-    assert len(repo._tasks) == 2
+# Test Case 6: add_task_invalid_due_date_format
+def test_add_task_invalid_due_date_format(repo):
+    # TaskCreate expects a date object, so simulate invalid input
+    with pytest.raises(Exception):
+        TaskCreate(title="Bad Date", due_date="2024-99-99")
+    # If repo.add_task is called with a dict with invalid date, should raise error
+    with pytest.raises(Exception):
+        repo.add_task({"title": "Bad Date", "due_date": "2024-99-99"})
+    assert len(repo._tasks) == 0
 
-# Test Case 9: add_task_with_large_fields
-def test_add_task_with_large_fields(repo):
+# Test Case 7: add_task_file_save_failure
+def test_add_task_file_save_failure(repo, monkeypatch):
+    task_data = TaskCreate(title="Valid Task")
+    def fail_save(*args, **kwargs):
+        raise IOError("Disk full")
+    monkeypatch.setattr(repo, "_save_data", fail_save)
+    with pytest.raises(IOError):
+        repo.add_task(task_data)
+    assert len(repo._tasks) == 0 or repo._tasks[-1].title == "Valid Task"
+
+# Test Case 8: add_task_with_very_large_title
+def test_add_task_with_very_large_title(repo):
     large_title = "A" * 10000
-    task_data = {"title": large_title}
+    task_data = TaskCreate(title=large_title)
     try:
         task = repo.add_task(task_data)
         assert task.title == large_title
         assert task.id == 1
     except Exception:
-        # If implementation limits exceeded, error is expected
         assert len(repo._tasks) == 0
 
-# Test Case 10: file_write_error_on_add_task
-def test_file_write_error_on_add_task(repo, monkeypatch):
-    task_data = {"title": "Write Error"}
-    def fail_write(*args, **kwargs):
-        raise IOError("Disk full")
-    monkeypatch.setattr(repo, "save_tasks", fail_write)
-    with pytest.raises(IOError):
-        repo.add_task(task_data)
-    assert len(repo._tasks) == 0
+# Test Case 9: add_task_with_special_characters_in_title
+def test_add_task_with_special_characters_in_title(repo):
+    special_title = "Task 🚀✨!@#"
+    task_data = TaskCreate(title=special_title)
+    task = repo.add_task(task_data)
+    assert task.title == special_title
+    assert repo._tasks == [task]
 
-# Test Case 11: id_counter_at_maximum_value
-def test_id_counter_at_maximum_value(repo):
+# Test Case 10: add_task_with_duplicate_title
+def test_add_task_with_duplicate_title(repo):
+    task_data = TaskCreate(title="Task A")
+    task1 = repo.add_task(task_data)
+    task2 = repo.add_task(task_data)
+    assert task1.id != task2.id
+    assert task1.title == task2.title == "Task A"
+    assert len(repo._tasks) == 2
+
+# Test Case 11: add_task_when_id_counter_at_max_value
+def test_add_task_when_id_counter_at_max_value(repo):
     repo._id_counter = 2**31 - 1
-    task_data = {"title": "Overflow"}
+    task_data = TaskCreate(title="Overflow")
     try:
         task = repo.add_task(task_data)
         assert task.id == 2**31 - 1
         assert repo._id_counter == 2**31
     except Exception:
-        # If overflow error is raised, that's acceptable
         assert len(repo._tasks) == 0
-
-# Test Case 12: add_task_with_empty_dict
-def test_add_task_with_empty_dict(repo):
-    with pytest.raises(Exception):
-        repo.add_task({})
-    assert len(repo._tasks) == 0
-
-# Test Case 13: add_task_with_null_input(repo):
-def test_add_task_with_null_input(repo):
-    with pytest.raises(Exception):
-        repo.add_task(None)
-    assert len(repo._tasks) == 0

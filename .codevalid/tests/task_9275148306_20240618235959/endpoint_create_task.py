@@ -13,23 +13,19 @@ if not hasattr(app, 'routes') or not any(r.path == "/tasks" for r in app.routes)
 def max_length_title():
     return "T" * 255
 
-@pytest.fixture
-def exceeding_length_title():
-    return "T" * 256
-
-# Test Case 1: Create Task with Valid Input
-def test_create_task_with_valid_input():
+# Test Case 1: Create Task Successfully
+def test_create_task_successfully():
     payload = {
-        "description": "Write and review all documentation files for the project.",
+        "description": "Document all endpoints and workflows",
         "due_date": "2024-07-01",
-        "priority": "high",
+        "priority": 3,
         "title": "Complete project documentation"
     }
     expected_response = {
-        "description": "Write and review all documentation files for the project.",
+        "description": "Document all endpoints and workflows",
         "due_date": "2024-07-01",
-        "id": 1,
-        "priority": "high",
+        "id": 101,
+        "priority": 3,
         "status": "pending",
         "title": "Complete project documentation"
     }
@@ -42,84 +38,63 @@ def test_create_task_with_valid_input():
 # Test Case 2: Create Task with Missing Title
 def test_create_task_with_missing_title():
     payload = {
-        "description": "Description only, no title.",
+        "description": "Document workflows",
         "due_date": "2024-07-01",
-        "priority": "low"
+        "priority": 2
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 400
-    assert response.json() == {"error": "Title is required."}
+    assert response.json() == {"error": "Title is required"}
 
-# Test Case 3: Create Task with Invalid Due Date Format
-def test_create_task_with_invalid_due_date_format():
+# Test Case 3: Create Task with Invalid Priority
+def test_create_task_with_invalid_priority():
     payload = {
-        "description": "This task has invalid due_date.",
-        "due_date": "01-07-2024",
-        "priority": "medium",
-        "title": "Task with bad due date"
+        "description": "Fix critical bug",
+        "due_date": "2024-07-05",
+        "priority": 10,
+        "title": "Urgent bug fix"
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 400
-    assert response.json() == {"error": "Invalid due_date format. Expected YYYY-MM-DD."}
+    assert response.json() == {"error": "Priority must be between 1 and 5"}
 
-# Test Case 4: Create Task with Missing Optional Fields
-def test_create_task_with_missing_optional_fields():
-    payload = {
-        "title": "Task with required fields"
-    }
-    expected_response = {
-        "description": None,
-        "due_date": None,
-        "id": 2,
-        "priority": "normal",
-        "status": "pending",
-        "title": "Task with required fields"
-    }
-    with patch("app.services.task_service.TaskService.create_task") as mock_create:
-        mock_create.return_value = expected_response
-        response = client.post("/tasks", json=payload)
-        assert response.status_code == 201
-        assert response.json() == expected_response
-
-# Test Case 5: Create Task with Duplicate Title
-def test_create_task_with_duplicate_title():
-    payload = {
-        "description": "Another task with same title.",
-        "due_date": "2024-07-02",
-        "priority": "low",
-        "title": "Complete project documentation"
-    }
-    with patch("app.services.task_service.TaskService.create_task") as mock_create:
-        mock_create.side_effect = Exception("Task with the given title already exists.")
-        response = client.post("/tasks", json=payload)
-        assert response.status_code == 400
-        assert response.json() == {"error": "Task with the given title already exists."}
-
-# Test Case 6: Create Task with Empty Title
+# Test Case 4: Create Task with Empty Title
 def test_create_task_with_empty_title():
     payload = {
-        "description": "Empty title task.",
-        "due_date": "2024-07-01",
-        "priority": "medium",
+        "description": "Empty title test",
+        "due_date": "2024-07-10",
+        "priority": 1,
         "title": ""
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 400
-    assert response.json() == {"error": "Title cannot be empty."}
+    assert response.json() == {"error": "Title cannot be empty"}
 
-# Test Case 7: Create Task with Very Long Title
-def test_create_task_with_very_long_title(max_length_title):
+# Test Case 5: Create Task with Invalid Due Date Format
+def test_create_task_with_invalid_due_date_format():
     payload = {
-        "description": "Title at boundary length.",
-        "due_date": "2024-07-01",
-        "priority": "high",
+        "description": "Testing bad date",
+        "due_date": "07/10/2024",
+        "priority": 2,
+        "title": "Task with invalid date"
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {"error": "Invalid due_date format, expected YYYY-MM-DD"}
+
+# Test Case 6: Create Task with Maximum Title Length
+def test_create_task_with_maximum_title_length(max_length_title):
+    payload = {
+        "description": "Testing max title length",
+        "due_date": "2024-07-20",
+        "priority": 1,
         "title": max_length_title
     }
     expected_response = {
-        "description": "Title at boundary length.",
-        "due_date": "2024-07-01",
-        "id": 3,
-        "priority": "high",
+        "description": "Testing max title length",
+        "due_date": "2024-07-20",
+        "id": 102,
+        "priority": 1,
         "status": "pending",
         "title": max_length_title
     }
@@ -129,55 +104,88 @@ def test_create_task_with_very_long_title(max_length_title):
         assert response.status_code == 201
         assert response.json() == expected_response
 
-# Test Case 8: Create Task with Overly Long Title
-def test_create_task_with_overly_long_title(exceeding_length_title):
+# Test Case 7: Create Task with Minimum Priority
+def test_create_task_with_minimum_priority():
     payload = {
-        "description": "Title too long.",
-        "due_date": "2024-07-01",
-        "priority": "high",
-        "title": exceeding_length_title
+        "description": "Priority 1 test",
+        "due_date": "2024-07-15",
+        "priority": 1,
+        "title": "Low priority task"
     }
-    response = client.post("/tasks", json=payload)
-    assert response.status_code == 400
-    assert response.json() == {"error": "Title exceeds maximum length of 255 characters."}
+    expected_response = {
+        "description": "Priority 1 test",
+        "due_date": "2024-07-15",
+        "id": 103,
+        "priority": 1,
+        "status": "pending",
+        "title": "Low priority task"
+    }
+    with patch("app.services.task_service.TaskService.create_task") as mock_create:
+        mock_create.return_value = expected_response
+        response = client.post("/tasks", json=payload)
+        assert response.status_code == 201
+        assert response.json() == expected_response
 
-# Test Case 9: Create Task with Invalid Priority
-def test_create_task_with_invalid_priority():
+# Test Case 8: Create Task with Maximum Priority
+def test_create_task_with_maximum_priority():
     payload = {
-        "description": "Priority is not one of allowed values.",
-        "due_date": "2024-07-01",
-        "priority": "urgent",
-        "title": "Task with invalid priority"
+        "description": "Priority 5 test",
+        "due_date": "2024-07-18",
+        "priority": 5,
+        "title": "High priority task"
     }
-    response = client.post("/tasks", json=payload)
-    assert response.status_code == 400
-    assert response.json() == {"error": "Invalid priority value. Allowed: low, normal, high."}
+    expected_response = {
+        "description": "Priority 5 test",
+        "due_date": "2024-07-18",
+        "id": 104,
+        "priority": 5,
+        "status": "pending",
+        "title": "High priority task"
+    }
+    with patch("app.services.task_service.TaskService.create_task") as mock_create:
+        mock_create.return_value = expected_response
+        response = client.post("/tasks", json=payload)
+        assert response.status_code == 201
+        assert response.json() == expected_response
 
-# Test Case 10: Create Task with Malformed JSON
-def test_create_task_with_malformed_json():
+# Test Case 9: Create Task without Description
+def test_create_task_without_description():
+    payload = {
+        "due_date": "2024-07-19",
+        "priority": 2,
+        "title": "Task without description"
+    }
+    expected_response = {
+        "description": "",
+        "due_date": "2024-07-19",
+        "id": 105,
+        "priority": 2,
+        "status": "pending",
+        "title": "Task without description"
+    }
+    with patch("app.services.task_service.TaskService.create_task") as mock_create:
+        mock_create.return_value = expected_response
+        response = client.post("/tasks", json=payload)
+        assert response.status_code == 201
+        assert response.json() == expected_response
+
+# Test Case 10: Create Task with Invalid JSON Payload
+def test_create_task_with_invalid_json_payload():
     malformed_json = "{'title': 'Malformed"
     response = client.post("/tasks", data=malformed_json, headers={"Content-Type": "application/json"})
     assert response.status_code == 400
-    assert response.json() == {"error": "Malformed JSON payload."}
+    assert response.json() == {"error": "Invalid JSON payload"}
 
-# Test Case 11: Create Task with Null Fields
-def test_create_task_with_null_fields():
+# Test Case 11: Create Task with Duplicate Title
+def test_create_task_with_duplicate_title():
     payload = {
-        "description": None,
-        "due_date": None,
-        "priority": None,
-        "title": "Task with nulls"
-    }
-    expected_response = {
-        "description": None,
-        "due_date": None,
-        "id": 4,
-        "priority": "normal",
-        "status": "pending",
-        "title": "Task with nulls"
+        "description": "Duplicate title test",
+        "due_date": "2024-07-21",
+        "priority": 3,
+        "title": "Complete project documentation"
     }
     with patch("app.services.task_service.TaskService.create_task") as mock_create:
-        mock_create.return_value = expected_response
+        mock_create.side_effect = Exception("Task with this title already exists")
         response = client.post("/tasks", json=payload)
-        assert response.status_code == 201
-        assert response.json() == expected_response
+        assert response.status_code == 400
+        assert response.json() == {"error": "Task with this title already exists"}

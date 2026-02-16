@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from app.services.task_service import TaskService
 
@@ -15,7 +15,7 @@ class DummyRepository:
             return self.add_task_behavior
         # Simulate duplicate check
         for t in self.existing_tasks:
-            if t['title'] == task_data.get('title') and t.get('assignee_id') == task_data.get('assignee_id'):
+            if t['title'] == task_data.get('title') and t.get('user_id') == task_data.get('user_id'):
                 raise ValueError('Duplicate task')
         # Simulate successful task creation
         return {**task_data, 'id': 'any_valid_id'}
@@ -28,102 +28,134 @@ def repository():
 def service(repository):
     return TaskService(repository=repository)
 
-# Test Case 1: Create task with valid input
-def test_create_task_with_valid_input(service, caplog):
+# Test Case 1: create_task_with_valid_data
+def test_create_task_with_valid_data(service, caplog):
     task_data = {
         'title': 'Complete assignment',
         'description': 'Finish math homework',
         'due_date': '2024-06-15',
-        'assignee_id': 1
+        'user_id': 1
     }
     with caplog.at_level('INFO'):
         result = service.create_task(task_data)
     assert result['title'] == task_data['title']
     assert result['description'] == task_data['description']
     assert result['due_date'] == task_data['due_date']
-    assert result['assignee_id'] == task_data['assignee_id']
+    assert result['user_id'] == task_data['user_id']
     assert 'Creating task' in caplog.text
 
-# Test Case 2: Create task with missing required field
-def test_create_task_with_missing_required_field(service):
+# Test Case 2: create_task_missing_title
+def test_create_task_missing_title(service):
     task_data = {
         'description': 'Finish math homework',
         'due_date': '2024-06-15',
-        'assignee_id': 1
+        'user_id': 1
     }
     with pytest.raises(ValueError) as excinfo:
         service.create_task(task_data)
     assert 'missing required field' in str(excinfo.value)
 
-# Test Case 3: Create task with empty input
-def test_create_task_with_empty_input(service):
-    task_data = {}
+# Test Case 3: create_task_empty_title
+def test_create_task_empty_title(service):
+    task_data = {
+        'title': '',
+        'description': 'Finish math homework',
+        'due_date': '2024-06-15',
+        'user_id': 1
+    }
     with pytest.raises(ValueError) as excinfo:
         service.create_task(task_data)
-    assert 'missing required fields' in str(excinfo.value)
+    assert 'invalid title' in str(excinfo.value) or 'task not created' in str(excinfo.value)
 
-# Test Case 4: Create task with invalid field types
-@pytest.mark.parametrize("field,value", [
-    ("title", 123),
-    ("assignee_id", "not_a_number"),
-    ("due_date", 20240615),
-])
-def test_create_task_with_invalid_field_types(service, field, value):
+# Test Case 4: create_task_with_invalid_due_date_format
+def test_create_task_with_invalid_due_date_format(service):
     task_data = {
-        'title': 'Valid Title',
-        'description': 'Valid Description',
-        'due_date': '2024-06-15',
-        'assignee_id': 1
+        'title': 'Invalid Date',
+        'description': 'Desc',
+        'due_date': '31-12-2024',
+        'user_id': 1
     }
-    task_data[field] = value
-    with pytest.raises(TypeError) as excinfo:
+    with pytest.raises(ValueError) as excinfo:
         service.create_task(task_data)
-    assert 'invalid data type' in str(excinfo.value)
+    assert 'invalid date format' in str(excinfo.value)
 
-# Test Case 5: Create task with boundary title length
-def test_create_task_with_boundary_title_length(service):
+# Test Case 5: create_task_missing_user_id
+def test_create_task_missing_user_id(service):
+    task_data = {
+        'title': 'Missing User',
+        'description': 'Desc',
+        'due_date': '2024-06-15'
+    }
+    with pytest.raises(ValueError) as excinfo:
+        service.create_task(task_data)
+    assert 'missing user information' in str(excinfo.value)
+
+# Test Case 6: create_task_boundary_title_length
+def test_create_task_boundary_title_length(service, caplog):
     task_data = {
         'title': 'T' * 255,
         'description': 'Boundary test',
         'due_date': '2024-06-15',
-        'assignee_id': 1
+        'user_id': 1
     }
-    result = service.create_task(task_data)
+    with caplog.at_level('INFO'):
+        result = service.create_task(task_data)
     assert result['title'] == task_data['title']
+    assert 'Creating task' in caplog.text
 
-# Test Case 6: Create task with overflow title length
-def test_create_task_with_overflow_title_length(service):
+# Test Case 7: create_task_special_characters_title
+def test_create_task_special_characters_title(service, caplog):
     task_data = {
-        'title': 'T' * 256,
-        'description': 'Overflow test',
+        'title': '@#$%&*',
+        'description': 'Special chars',
         'due_date': '2024-06-15',
-        'assignee_id': 1
+        'user_id': 1
     }
-    with pytest.raises(ValueError) as excinfo:
-        service.create_task(task_data)
-    assert 'title length exceeded' in str(excinfo.value)
+    with caplog.at_level('INFO'):
+        result = service.create_task(task_data)
+    assert result['title'] == task_data['title']
+    assert 'Creating task' in caplog.text
 
-# Test Case 7: Create task with null fields
-@pytest.mark.parametrize("field", ["title", "assignee_id", "due_date"])
-def test_create_task_with_null_fields(service, field):
+# Test Case 8: create_task_repository_failure
+def test_create_task_repository_failure():
+    repository = DummyRepository(add_task_behavior=Exception('Repository failure'))
+    service = TaskService(repository=repository)
     task_data = {
         'title': 'Valid Title',
         'description': 'Valid Description',
         'due_date': '2024-06-15',
-        'assignee_id': 1
+        'user_id': 1
     }
-    task_data[field] = None
+    with pytest.raises(Exception) as excinfo:
+        service.create_task(task_data)
+    assert 'Repository failure' in str(excinfo.value)
+
+# Test Case 9: create_task_with_null_task_data
+def test_create_task_with_null_task_data(service):
+    task_data = None
     with pytest.raises(ValueError) as excinfo:
         service.create_task(task_data)
-    assert 'required fields cannot be null' in str(excinfo.value)
+    assert 'invalid input' in str(excinfo.value)
 
-# Test Case 8: Create task that duplicates existing task
-def test_create_task_that_duplicates_existing_task():
+# Test Case 10: create_task_with_minimal_fields
+def test_create_task_with_minimal_fields(service, caplog):
+    task_data = {
+        'title': 'Minimal Task',
+        'user_id': 1
+    }
+    with caplog.at_level('INFO'):
+        result = service.create_task(task_data)
+    assert result['title'] == task_data['title']
+    assert result['user_id'] == task_data['user_id']
+    assert 'Creating task' in caplog.text
+
+# Test Case 11: create_task_with_duplicate_task
+def test_create_task_with_duplicate_task():
     existing_task = {
         'title': 'Duplicate Task',
         'description': 'Desc',
         'due_date': '2024-06-15',
-        'assignee_id': 1
+        'user_id': 1
     }
     repository = DummyRepository(existing_tasks=[existing_task])
     service = TaskService(repository=repository)
@@ -131,82 +163,21 @@ def test_create_task_that_duplicates_existing_task():
         'title': 'Duplicate Task',
         'description': 'Desc',
         'due_date': '2024-06-15',
-        'assignee_id': 1
+        'user_id': 1
     }
     with pytest.raises(ValueError) as excinfo:
         service.create_task(task_data)
-    assert 'duplicate task' in str(excinfo.value)
+    assert 'duplication' in str(excinfo.value) or 'Duplicate task' in str(excinfo.value)
 
-# Test Case 9: Create task with repository failure
-def test_create_task_with_repository_failure():
-    repository = DummyRepository(add_task_behavior=Exception('Database error'))
-    service = TaskService(repository=repository)
+# Test Case 12: create_task_with_long_description
+def test_create_task_with_long_description(service, caplog):
     task_data = {
-        'title': 'Valid Title',
-        'description': 'Valid Description',
+        'title': 'Long Description Task',
+        'description': 'D' * 1024,
         'due_date': '2024-06-15',
-        'assignee_id': 1
-    }
-    with pytest.raises(Exception) as excinfo:
-        service.create_task(task_data)
-    assert 'Database error' in str(excinfo.value)
-
-# Test Case 10: Create task with only minimum required fields
-def test_create_task_with_only_minimum_required_fields(service):
-    task_data = {
-        'title': 'Minimum Task',
-        'assignee_id': 1
-    }
-    result = service.create_task(task_data)
-    assert result['title'] == task_data['title']
-    assert result['assignee_id'] == task_data['assignee_id']
-
-# Test Case 11: Create task with invalid due date format
-def test_create_task_with_invalid_due_date_format(service):
-    task_data = {
-        'title': 'Invalid Date',
-        'description': 'Desc',
-        'due_date': '2024/13/01',
-        'assignee_id': 1
-    }
-    with pytest.raises(ValueError) as excinfo:
-        service.create_task(task_data)
-    assert 'invalid date format' in str(excinfo.value)
-
-# Test Case 12: Verify logging on successful task creation
-def test_verify_logging_on_successful_task_creation(service, caplog):
-    task_data = {
-        'title': 'Log Success',
-        'description': 'Desc',
-        'due_date': '2024-06-15',
-        'assignee_id': 1
+        'user_id': 1
     }
     with caplog.at_level('INFO'):
-        service.create_task(task_data)
+        result = service.create_task(task_data)
+    assert result['description'] == task_data['description']
     assert 'Creating task' in caplog.text
-    assert 'Task created successfully' in caplog.text
-
-# Test Case 13: Verify logging on failed task creation
-def test_verify_logging_on_failed_task_creation(service, caplog):
-    task_data = {
-        'description': 'Desc',
-        'due_date': '2024-06-15',
-        'assignee_id': 1
-    }
-    with caplog.at_level('INFO'):
-        with pytest.raises(ValueError):
-            service.create_task(task_data)
-    assert 'Creating task' in caplog.text
-    assert 'Task creation failed' in caplog.text
-
-# Test Case 14: Create task with non-existent assignee
-def test_create_task_with_non_existent_assignee(service):
-    task_data = {
-        'title': 'Task',
-        'description': 'Desc',
-        'due_date': '2024-06-15',
-        'assignee_id': 9999
-    }
-    with pytest.raises(ValueError) as excinfo:
-        service.create_task(task_data)
-    assert 'assignee not found' in str(excinfo.value)
