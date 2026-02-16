@@ -9,4 +9,4 @@ Personal Todo manager
   - Priority
   - Due date
   - User_name 
-  - location
+  - location 
