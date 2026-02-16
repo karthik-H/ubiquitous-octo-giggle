@@ -2,24 +2,35 @@
   "task_9275148306_20240618235959": {
     "implementation": [
       {
-        "How_is_it_connected_to_implementation": "Defines the REST API endpoint '/tasks' for creating a new task. Receives task data and delegates creation to the TaskService.",
+        "How_is_it_connected_to_implementation": "Defines the REST API endpoint for creating a new task. Receives TaskCreate input and delegates creation to the TaskService.",
+        "change_type": "unchanged",
         "file_path": "app/controllers/task_controller.py",
-        "id": "endpoint_create_task_rest_api",
-        "name": "create_task",
-        "pseudo_code": "When a POST request is made to '/tasks':\n  Receive task data as TaskCreate\n  Try to create the task using TaskService\n  If successful, return the created task\n  If an error occurs, raise HTTP 400 with error details",
+        "id": "endpoint_create_task",
+        "name": "POST /tasks",
+        "pseudo_code": "On POST /tasks with TaskCreate payload:\n    Try to create task using TaskService\n    If successful, return created Task\n    If error, raise HTTP 400 with error message",
         "type": "endpoint"
       },
       {
-        "How_is_it_connected_to_implementation": "Implements the business logic for creating a task. Logs the operation and delegates to the repository for persistence.",
+        "How_is_it_connected_to_implementation": "Implements business logic for creating a task. Logs the operation and delegates to TaskRepository for persistence.",
+        "change_type": "unchanged",
         "file_path": "app/services/task_service.py",
-        "id": "service_create_task_logic",
+        "id": "service_create_task",
         "name": "TaskService.create_task",
-        "pseudo_code": "Log the creation attempt for the user\nCall repository.add_task with task_data\nReturn the result",
+        "pseudo_code": "Function create_task(task_data):\n    Log creation attempt\n    Call repository.add_task(task_data)\n    Return created Task",
+        "type": "function"
+      },
+      {
+        "How_is_it_connected_to_implementation": "Handles persistence of the new task. Assigns an ID, saves to file, and returns the Task object.",
+        "change_type": "unchanged",
+        "file_path": "app/repositories/task_repository.py",
+        "id": "repository_add_task",
+        "name": "TaskRepository.add_task",
+        "pseudo_code": "Function add_task(task_data):\n    Create Task object with new ID\n    Append to task list\n    Increment ID counter\n    Save tasks to file\n    Log creation\n    Return Task",
         "type": "function"
       }
     ],
     "missing_implementations": [
-      "Validation of the location field to ensure it is either 'Ames' or 'Boone' before task creation"
+      "Validation logic for the location field to ensure only 'Ames' or 'Boone' are accepted when creating a task"
     ]
   }
 }
