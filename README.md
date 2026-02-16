@@ -3,10 +3,10 @@
 Personal Todo manager
 
 ## Functional Requirements
+Python program with REST endpoint
 - Add new tasks with: 
   - Title 
   - Description
   - Priority
   - Due date
   - User_name 
-  - location, location must be either Ames or Boone or empty
