@@ -1,8 +1,6 @@
 import pytest
-from datetime import date, datetime
-from pydantic import ValidationError
+from datetime import date
 from app.repositories.task_repository import TaskRepository
-from app.domain.models.task import TaskCreate, Task
 import logging
 
 @pytest.fixture
@@ -11,131 +9,109 @@ def repo():
 
 def test_add_task_with_minimal_valid_input(repo):
     # Test Case 1
-    data = {"title": "Buy groceries", "description": "Purchase fruits and vegetables", "priority": 1, "due_date": date(2024, 7, 1), "user_name": "user"}
-    task = repo.add_task(TaskCreate(**data))
-    assert task.id == 1
-    assert task.title == "Buy groceries"
-    assert task.description == "Purchase fruits and vegetables"
-    assert repo._id_counter == 2
-    assert repo.list_tasks()[0].id == 1
+    data = {'description': 'A minimal valid task', 'due_date': '2024-06-30', 'title': 'Sample Task'}
+    task = repo.add_task(data)
+    assert task['description'] == 'A minimal valid task'
+    assert task['due_date'] == '2024-06-30'
+    assert task['title'] == 'Sample Task'
+    assert isinstance(task['id'], int)
+    assert repo._tasks[-1] == task
 
-def test_add_task_with_all_valid_attributes(repo):
+def test_add_task_with_all_possible_fields(repo):
     # Test Case 2
-    # The implementation does not support 'labels' or string 'priority', so we adapt to model
-    data = {
-        "title": "Prepare meeting",
-        "description": "Create slides for Monday",
-        "priority": 5,
-        "due_date": date(2024, 7, 1),
-        "user_name": "user"
-    }
-    task = repo.add_task(TaskCreate(**data))
-    assert task.id == 1
-    assert task.title == "Prepare meeting"
-    assert task.description == "Create slides for Monday"
-    assert task.priority == 5
-    assert repo._id_counter == 2
-    assert repo.list_tasks()[0].id == 1
+    data = {'assigned_to': 'user123', 'description': 'Task with all attributes', 'due_date': '2024-07-01', 'priority': 'high', 'title': 'Complete Task'}
+    task = repo.add_task(data)
+    assert task['assigned_to'] == 'user123'
+    assert task['description'] == 'Task with all attributes'
+    assert task['due_date'] == '2024-07-01'
+    assert task['priority'] == 'high'
+    assert task['title'] == 'Complete Task'
+    assert isinstance(task['id'], int)
+    assert repo._tasks[-1] == task
 
-def test_add_multiple_tasks_and_check_unique_ids(repo):
+def test_verify_sequential_id_assignment(repo):
     # Test Case 3
-    data1 = {"title": "Task One", "description": "First task", "priority": 1, "due_date": date(2024, 7, 1), "user_name": "user"}
-    data2 = {"title": "Task Two", "description": "Second task", "priority": 2, "due_date": date(2024, 7, 2), "user_name": "user"}
-    t1 = repo.add_task(TaskCreate(**data1))
-    t2 = repo.add_task(TaskCreate(**data2))
-    assert t1.id == 1
-    assert t2.id == 2
-    assert t1.title == "Task One"
-    assert t2.title == "Task Two"
-    assert repo._id_counter == 3
-    assert len({t1.id, t2.id}) == 2
-    assert repo.list_tasks()[0].id == 1
-    assert repo.list_tasks()[1].id == 2
+    data1 = {'description': 'First task', 'title': 'Task #1'}
+    data2 = {'description': 'Second task', 'title': 'Task #2'}
+    t1 = repo.add_task(data1)
+    t2 = repo.add_task(data2)
+    assert t1['id'] == 1
+    assert t2['id'] == 2
+    assert t1['title'] == 'Task #1'
+    assert t2['title'] == 'Task #2'
 
-def test_add_task_with_missing_required_title(repo):
+def test_add_task_with_empty_title(repo):
     # Test Case 4
-    data = {"description": "Task without a title", "priority": 1, "due_date": date(2024, 7, 1), "user_name": "user"}
-    with pytest.raises(ValidationError) as excinfo:
-        TaskCreate(**data)
-    assert "title" in str(excinfo.value)
-    # Simulate custom error mapping
-    error_type = "MissingRequiredFieldError"
-    assert error_type == "MissingRequiredFieldError"
+    data = {'description': 'No title', 'title': ''}
+    result = repo.add_task(data)
+    assert result == {'error': 'Title must not be empty'}
 
-def test_add_task_with_empty_title_string(repo):
+def test_add_task_missing_required_field(repo):
     # Test Case 5
-    data = {"title": "", "description": "Empty title test", "priority": 1, "due_date": date(2024, 7, 1), "user_name": "user"}
-    with pytest.raises(ValidationError) as excinfo:
-        TaskCreate(**data)
-    assert "title" in str(excinfo.value)
-    # If implementation allowed empty string, would check id increment and storage
-
-def test_add_task_with_extremely_long_title(repo):
-    # Test Case 6
-    long_title = "T" * 100  # max_length=100 in model
-    data = {"title": long_title, "description": "Long title test", "priority": 1, "due_date": date(2024, 7, 1), "user_name": "user"}
-    task = repo.add_task(TaskCreate(**data))
-    assert task.title == long_title
-    assert task.id == 1
-    assert repo._id_counter == 2
-    assert repo.list_tasks()[0].id == 1
+    data = {'description': 'Missing title'}
+    result = repo.add_task(data)
+    assert result == {'error': 'Missing required field: title'}
 
 def test_add_task_with_invalid_due_date_format(repo):
-    # Test Case 7
-    data = {"title": "Invalid date", "description": "Due date is not ISO format", "priority": 1, "due_date": "01-07-2024", "user_name": "user"}
-    with pytest.raises(ValidationError) as excinfo:
-        TaskCreate(**data)
-    assert "due_date" in str(excinfo.value)
-    error_type = "InvalidDateFormatError"
-    assert error_type == "InvalidDateFormatError"
+    # Test Case 6
+    data = {'due_date': '30-06-2024', 'title': 'Bad Date Task'}
+    result = repo.add_task(data)
+    assert result == {'error': 'Invalid due_date format'}
 
-def test_add_task_with_empty_description(repo):
+def test_add_task_with_duplicate_title(repo):
+    # Test Case 7
+    data1 = {'description': 'First', 'title': 'Duplicate Task'}
+    data2 = {'description': 'Second', 'title': 'Duplicate Task'}
+    t1 = repo.add_task(data1)
+    t2 = repo.add_task(data2)
+    assert t1['title'] == 'Duplicate Task'
+    assert t2['title'] == 'Duplicate Task'
+    assert isinstance(t1['id'], int)
+    assert isinstance(t2['id'], int)
+    assert t1['id'] != t2['id']
+
+def test_add_task_with_excessively_long_title(repo):
     # Test Case 8
-    data = {"title": "Task with empty description", "description": "", "priority": 1, "due_date": date(2024, 7, 1), "user_name": "user"}
-    with pytest.raises(ValidationError) as excinfo:
-        TaskCreate(**data)
-    assert "description" in str(excinfo.value)
-    # If implementation allowed empty string, would check id increment and storage
+    long_title = 'T' * 255
+    data = {'description': 'Long title test', 'title': long_title}
+    task = repo.add_task(data)
+    assert task['description'] == 'Long title test'
+    assert task['title'] == long_title
+    assert isinstance(task['id'], int)
+
+def test_add_task_with_null_fields(repo):
+    # Test Case 9
+    data = {'description': None, 'title': None}
+    result = repo.add_task(data)
+    assert result == {'error': 'Null values not allowed for title or description'}
 
 def test_add_task_with_invalid_priority_value(repo):
-    # Test Case 9
-    data = {"title": "Invalid priority", "description": "Priority is not recognized", "priority": 10, "due_date": date(2024, 7, 1), "user_name": "user"}
-    with pytest.raises(ValidationError) as excinfo:
-        TaskCreate(**data)
-    assert "priority" in str(excinfo.value)
-    error_type = "InvalidPriorityValueError"
-    assert error_type == "InvalidPriorityValueError"
-
-def test_add_task_with_empty_labels_list(repo):
     # Test Case 10
-    # Implementation does not support 'labels', so this is skipped
+    data = {'priority': 'extreme', 'title': 'Priority Test'}
+    result = repo.add_task(data)
+    assert result == {'error': 'Invalid priority value'}
 
-def test_add_task_with_labels_not_a_list(repo):
+def test_verify_task_is_stored_and_returned(repo):
     # Test Case 11
-    # Implementation does not support 'labels', so this is skipped
+    data = {'description': 'Should be stored', 'title': 'Store Test'}
+    task = repo.add_task(data)
+    assert task['description'] == 'Should be stored'
+    assert task['title'] == 'Store Test'
+    assert isinstance(task['id'], int)
+    assert repo._tasks[-1] == task
 
-def test_add_task_with_null_data(repo):
+def test_verify_task_creation_is_logged(repo, caplog):
     # Test Case 12
-    with pytest.raises(TypeError) as excinfo:
-        repo.add_task(None)
-    error_type = "NullInputError"
-    assert error_type == "NullInputError"
+    data = {'description': 'Check logging', 'title': 'Log Test'}
+    with caplog.at_level(logging.INFO):
+        task = repo.add_task(data)
+        expected_log = f"Task created with ID: {task['id']}, title: Log Test"
+        assert expected_log in caplog.text
 
-def test_add_task_when_id_counter_at_max_integer_value():
+def test_add_task_with_empty_description(repo):
     # Test Case 13
-    repo = TaskRepository()
-    repo._id_counter = 2147483647
-    data = {"title": "Overflow test", "description": "ID counter at max", "priority": 1, "due_date": date(2024, 7, 1), "user_name": "user"}
-    task = repo.add_task(TaskCreate(**data))
-    assert task.id == 2147483647
-    # Next task would overflow if implementation used fixed int, but Python int is unbounded
-    # Simulate overflow error if needed
-    response_or_error = "Task with id=2147483647"
-    assert response_or_error == "Task with id=2147483647"
-
-def test_log_task_creation(repo, caplog):
-    # Test Case 14
-    data = {"title": "Log task", "description": "Ensure logging", "priority": 1, "due_date": date(2024, 7, 1), "user_name": "user"}
-    with caplog.at_level(logging.INFO, logger="TaskRepository"):
-        task = repo.add_task(TaskCreate(**data))
-        assert f"Task created: {task}" in caplog.text or f"Task created: id={task.id}" in caplog.text
+    data = {'description': '', 'title': 'Empty Description'}
+    task = repo.add_task(data)
+    assert task['description'] == ''
+    assert task['title'] == 'Empty Description'
+    assert isinstance(task['id'], int)
