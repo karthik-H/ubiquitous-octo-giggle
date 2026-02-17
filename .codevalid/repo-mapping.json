@@ -73,7 +73,7 @@
       }
     ],
     "missing_implementations": [
-      "Validation to restrict Location to only 'Ames' and 'Boone' is not implemented.",
+      "Validation to restrict Location to only 'Ames', 'Boone', or 'Huxley' is not implemented.",
       "The Location attribute is missing from the Task and TaskCreate models, so it cannot be set via the REST endpoint."
     ]
   }
