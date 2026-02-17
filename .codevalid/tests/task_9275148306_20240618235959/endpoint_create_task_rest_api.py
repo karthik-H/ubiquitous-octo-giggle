@@ -2,127 +2,165 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import status
 from app.main import app
-from app.controllers.task_controller import task_service
-from app.domain.models.task import TaskCreate, Task
 
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)
-def mock_task_service(monkeypatch):
-    # Patch task_service.create_task for each test
-    class MockTaskService:
-        def __init__(self):
-            self.tasks = {}
+def clear_tasks():
+    # If there's a global or in-memory DB, clear it here.
+    # Otherwise, assume each test starts with no tasks.
+    pass
 
-        def create_task(self, task_data):
-            # Duplicate title check
-            if task_data.title in self.tasks:
-                raise Exception("Task with this title already exists")
-            # Title length check
-            if len(task_data.title) > 100:
-                raise Exception("Title exceeds maximum length")
-            # Priority check
-            if not (1 <= task_data.priority <= 5):
-                raise Exception("Priority value is invalid")
-            # Due date format is handled by Pydantic, so invalid format will not reach here
-            # Description can be empty if allowed
-            task_id = len(self.tasks) + 1
-            task = Task(
-                id=task_id,
-                title=task_data.title,
-                description=task_data.description,
-                priority=task_data.priority,
-                due_date=task_data.due_date,
-                user_name=task_data.user_name
-            )
-            self.tasks[task_data.title] = task
-            return task
-
-    monkeypatch.setattr(task_service, "create_task", MockTaskService().create_task)
-
-# Helper for valid task data
-def valid_task_data(**kwargs):
+def test_create_task_successful():
     data = {
-        "title": "Complete documentation",
-        "description": "Prepare API docs for release",
-        "priority": 5,
-        "due_date": "2024-07-01",
-        "user_name": "testuser"
+        "title": "Complete API documentation",
+        "description": "Write full documentation for the API endpoints.",
+        "priority": "high",
+        "due_date": "2024-07-10"
     }
-    data.update(kwargs)
-    return data
-
-def test_create_task_with_valid_data():
-    response = client.post("/tasks", json=valid_task_data())
-    assert response.status_code == status.HTTP_201_CREATED
+    response = client.post("/tasks", json=data)
+    assert response.status_code == 201
     resp = response.json()
-    assert resp["title"] == "Complete documentation"
-    assert resp["description"] == "Prepare API docs for release"
-    assert resp["priority"] == 5
-    assert resp["due_date"] == "2024-07-01"
-    assert resp["user_name"] == "testuser"
-    assert "id" in resp
+    assert resp == {
+        "id": 1,
+        "title": "Complete API documentation",
+        "description": "Write full documentation for the API endpoints.",
+        "priority": "high",
+        "due_date": "2024-07-10",
+        "status": "pending"
+    }
 
 def test_create_task_missing_title():
-    data = valid_task_data()
-    del data["title"]
+    data = {
+        "description": "Task without a title.",
+        "priority": "medium",
+        "due_date": "2024-07-10"
+    }
     response = client.post("/tasks", json=data)
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "detail" in response.json()
-    assert "field required" in response.json()["detail"][0]["msg"]
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Title is required."}
 
-def test_create_task_with_invalid_due_date_format():
-    data = valid_task_data(due_date="01-07-2024")
+def test_create_task_empty_title():
+    data = {
+        "title": "",
+        "description": "Empty title test.",
+        "priority": "low",
+        "due_date": "2024-07-10"
+    }
     response = client.post("/tasks", json=data)
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "detail" in response.json()
-    assert "invalid date format" in response.json()["detail"][0]["msg"]
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Title cannot be empty."}
 
-def test_create_task_with_duplicate_title():
+def test_create_task_invalid_priority():
+    data = {
+        "title": "Invalid priority task",
+        "description": "Test invalid priority value.",
+        "priority": "urgent",
+        "due_date": "2024-07-10"
+    }
+    response = client.post("/tasks", json=data)
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Priority must be one of: low, medium, high."}
+
+def test_create_task_missing_due_date():
+    data = {
+        "title": "Task without due date",
+        "description": "Testing missing due_date.",
+        "priority": "medium"
+    }
+    response = client.post("/tasks", json=data)
+    assert response.status_code == 201
+    resp = response.json()
+    # due_date can be omitted or null
+    expected = {
+        "id": 2,
+        "title": "Task without due date",
+        "description": "Testing missing due_date.",
+        "priority": "medium",
+        "status": "pending"
+    }
+    # due_date may be omitted or present as None/null
+    for k, v in expected.items():
+        assert resp[k] == v
+    assert "due_date" not in resp or resp["due_date"] is None
+
+def test_create_task_invalid_due_date_format():
+    data = {
+        "title": "Invalid due date format",
+        "description": "Due date format test.",
+        "priority": "high",
+        "due_date": "07-10-2024"
+    }
+    response = client.post("/tasks", json=data)
+    assert response.status_code == 400
+    assert response.json() == {"detail": "due_date must be in YYYY-MM-DD format."}
+
+def test_create_task_large_title():
+    max_title = "T" * 255
+    data = {
+        "title": max_title,
+        "description": "Boundary test for title length.",
+        "priority": "low",
+        "due_date": "2024-07-10"
+    }
+    response = client.post("/tasks", json=data)
+    assert response.status_code == 201
+    resp = response.json()
+    assert resp == {
+        "id": 3,
+        "title": max_title,
+        "description": "Boundary test for title length.",
+        "priority": "low",
+        "due_date": "2024-07-10",
+        "status": "pending"
+    }
+
+def test_create_task_title_exceeds_max_length():
+    too_long_title = "T" * 256
+    data = {
+        "title": too_long_title,
+        "description": "Title exceeds max length.",
+        "priority": "low",
+        "due_date": "2024-07-10"
+    }
+    response = client.post("/tasks", json=data)
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Title exceeds maximum allowed length of 255 characters."}
+
+def test_create_task_invalid_json_body():
+    response = client.post("/tasks", data="Invalid JSON string", headers={"Content-Type": "application/json"})
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Invalid JSON payload."}
+
+def test_create_task_duplicate_title():
     # First, create the task
-    client.post("/tasks", json=valid_task_data())
+    data = {
+        "title": "Unique Task Title",
+        "description": "First task.",
+        "priority": "medium",
+        "due_date": "2024-07-10"
+    }
+    response1 = client.post("/tasks", json=data)
+    assert response1.status_code == 201
     # Try to create again with same title
-    response = client.post("/tasks", json=valid_task_data())
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json()["detail"] == "Task with this title already exists"
+    data2 = {
+        "title": "Unique Task Title",
+        "description": "Duplicate title test.",
+        "priority": "medium",
+        "due_date": "2024-07-10"
+    }
+    response2 = client.post("/tasks", json=data2)
+    assert response2.status_code == 400
+    assert response2.json() == {"detail": "A task with this title already exists."}
 
-def test_create_task_with_empty_description():
-    data = valid_task_data(description="")
+def test_create_task_extra_fields():
+    data = {
+        "title": "Task with extra fields",
+        "description": "Testing extra fields.",
+        "priority": "medium",
+        "due_date": "2024-07-10",
+        "extra_field": "unexpected"
+    }
     response = client.post("/tasks", json=data)
-    assert response.status_code == status.HTTP_201_CREATED
-    resp = response.json()
-    assert resp["description"] == ""
-    assert resp["title"] == "Task with no description" or resp["title"] == "Complete documentation"
-
-def test_create_task_with_invalid_priority():
-    data = valid_task_data(priority=10)
-    response = client.post("/tasks", json=data)
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json()["detail"] == "Priority value is invalid"
-
-def test_create_task_with_maximum_title_length():
-    max_title = "T" * 100
-    data = valid_task_data(title=max_title, priority=1)
-    response = client.post("/tasks", json=data)
-    assert response.status_code == status.HTTP_201_CREATED
-    resp = response.json()
-    assert resp["title"] == max_title
-
-def test_create_task_with_title_exceeding_max_length():
-    too_long_title = "T" * 101
-    data = valid_task_data(title=too_long_title)
-    response = client.post("/tasks", json=data)
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert response.json()["detail"] == "Title exceeds maximum length"
-
-def test_create_task_with_empty_request_body():
-    response = client.post("/tasks", json={})
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "detail" in response.json()
-    assert "field required" in response.json()["detail"][0]["msg"]
-
-def test_create_task_with_invalid_json():
-    response = client.post("/tasks", data="invalid_json", headers={"Content-Type": "application/json"})
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
-    assert "detail" in response.json()
-    assert "Expecting value" in response.json()["detail"]
+    assert response.status_code == 400
+    assert response.json() == {"detail": "Unexpected field: extra_field."}
