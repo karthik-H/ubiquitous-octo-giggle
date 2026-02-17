@@ -409,7 +409,8 @@
           },
           "type": "negative"
         }
-      ]
+      ],
+      "test_path": ".codevalid/tests/task_9084173265_20240608000000/service_create_task_logic.py"
     },
     {
       "implementation_id": "repository_add_task_storage",
@@ -882,7 +883,8 @@
           },
           "type": "edge"
         }
-      ]
+      ],
+      "test_path": ".codevalid/tests/task_9084173265_20240608000000/repository_add_task_storage.py"
     }
   ],
   "component": [],
@@ -1272,7 +1274,8 @@
           },
           "type": "negative"
         }
-      ]
+      ],
+      "test_path": ".codevalid/tests/task_9084173265_20240608000000/endpoint_create_task_rest.py"
     }
   ]
 }
