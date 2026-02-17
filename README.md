@@ -10,4 +10,3 @@ Python program with REST endpoint
   - Priority
   - Due date
   - User_name
-- tag  
