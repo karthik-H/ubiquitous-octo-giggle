@@ -10,4 +10,4 @@ Python program with REST endpoint
   - Priority
   - Due date
   - User_name
-  - location
+  - location, and location must be Ames or boone
