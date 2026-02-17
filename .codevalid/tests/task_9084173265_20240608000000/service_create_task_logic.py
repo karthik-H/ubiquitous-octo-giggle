@@ -1,25 +1,6 @@
 import pytest
-from unittest.mock import MagicMock, patch
-from pydantic import ValidationError
-from datetime import date, datetime
+from unittest.mock import MagicMock
 from app.services.task_service import TaskService
-from app.domain.models.task import TaskCreate, Task
-
-# Helper functions for mapping priority and date
-def map_priority(priority_str):
-    mapping = {"High": 3, "Medium": 2, "Low": 1}
-    return mapping.get(priority_str)
-
-def parse_due_date(due_date_str):
-    try:
-        return datetime.strptime(due_date_str, "%Y-%m-%d").date()
-    except ValueError:
-        return None
-
-def strip_whitespace(value):
-    if isinstance(value, str):
-        return value.strip()
-    return value
 
 @pytest.fixture
 def mock_repository():
@@ -31,328 +12,252 @@ def mock_repository():
 def task_service(mock_repository):
     return TaskService(repository=mock_repository)
 
-# Test Case 1: Create Task Successfully With Valid Input
-def test_create_task_successfully_with_valid_input(task_service, mock_repository):
+# Helper for max length fields
+def repeat(char, count):
+    return char * count
+
+# Test Case 1: create_task_successful_ames
+def test_create_task_successful_ames(task_service, mock_repository):
     input_data = {
-        "Title": "Finish project report",
-        "Description": "Complete and submit the quarterly report",
+        "Description": "Complete the annual report",
+        "Due_date": "2024-07-01",
+        "Location": "Ames",
         "Priority": "High",
-        "Due date": "2024-07-01",
+        "Title": "Finish report",
         "User_name": "alice"
     }
-    task_create = TaskCreate(
-        title=input_data["Title"],
-        description=input_data["Description"],
-        priority=map_priority(input_data["Priority"]),
-        due_date=parse_due_date(input_data["Due date"]),
-        user_name=input_data["User_name"]
-    )
-    expected_task = Task(
-        id=1,
-        title=task_create.title,
-        description=task_create.description,
-        priority=task_create.priority,
-        due_date=task_create.due_date,
-        user_name=task_create.user_name
-    )
-    mock_repository.add_task.return_value = expected_task
+    expected_response = {
+        "Description": "Complete the annual report",
+        "Due_date": "2024-07-01",
+        "Location": "Ames",
+        "Priority": "High",
+        "Title": "Finish report",
+        "User_name": "alice",
+        "message": "Task created successfully"
+    }
+    mock_repository.add_task.return_value = expected_response
+    response, status = task_service.create_task(input_data)
+    assert response == expected_response
+    assert status == 201
 
-    result = task_service.create_task(task_create)
-    assert result == expected_task
-
-# Test Case 2: Task Creation Fails When Title Is Missing
-def test_task_creation_fails_when_title_is_missing(task_service):
+# Test Case 2: create_task_successful_boone
+def test_create_task_successful_boone(task_service, mock_repository):
     input_data = {
-        "Description": "Discuss project timeline",
+        "Description": "Set up project kickoff",
+        "Due_date": "2024-07-10",
+        "Location": "Boone",
         "Priority": "Medium",
-        "Due date": "2024-07-15",
+        "Title": "Schedule meeting",
         "User_name": "bob"
     }
-    with pytest.raises(ValidationError) as exc:
-        TaskCreate(
-            description=input_data["Description"],
-            priority=map_priority(input_data["Priority"]),
-            due_date=parse_due_date(input_data["Due date"]),
-            user_name=input_data["User_name"]
-        )
-    assert "title" in str(exc.value)
+    expected_response = {
+        "Description": "Set up project kickoff",
+        "Due_date": "2024-07-10",
+        "Location": "Boone",
+        "Priority": "Medium",
+        "Title": "Schedule meeting",
+        "User_name": "bob",
+        "message": "Task created successfully"
+    }
+    mock_repository.add_task.return_value = expected_response
+    response, status = task_service.create_task(input_data)
+    assert response == expected_response
+    assert status == 201
 
-# Test Case 3: Task Creation Fails When Description Is Missing
-def test_task_creation_fails_when_description_is_missing(task_service):
+# Test Case 3: missing_title_field
+def test_missing_title_field(task_service):
     input_data = {
-        "Title": "Call client",
+        "Description": "No title provided",
+        "Due_date": "2024-07-12",
+        "Location": "Ames",
         "Priority": "Low",
-        "Due date": "2024-07-20",
         "User_name": "carol"
     }
-    with pytest.raises(ValidationError) as exc:
-        TaskCreate(
-            title=input_data["Title"],
-            priority=map_priority(input_data["Priority"]),
-            due_date=parse_due_date(input_data["Due date"]),
-            user_name=input_data["User_name"]
-        )
-    assert "description" in str(exc.value)
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Missing required field: Title"}
+    assert status == 400
 
-# Test Case 4: Task Creation Fails When Priority Is Missing
-def test_task_creation_fails_when_priority_is_missing(task_service):
+# Test Case 4: missing_description_field
+def test_missing_description_field(task_service):
     input_data = {
-        "Title": "Review code",
-        "Description": "Check for bugs in the new module",
-        "Due date": "2024-07-10",
+        "Due_date": "2024-07-13",
+        "Location": "Boone",
+        "Priority": "Low",
+        "Title": "No description",
         "User_name": "dave"
     }
-    with pytest.raises(ValidationError) as exc:
-        TaskCreate(
-            title=input_data["Title"],
-            description=input_data["Description"],
-            due_date=parse_due_date(input_data["Due date"]),
-            user_name=input_data["User_name"]
-        )
-    assert "priority" in str(exc.value)
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Missing required field: Description"}
+    assert status == 400
 
-# Test Case 5: Task Creation Fails When Due Date Is Missing
-def test_task_creation_fails_when_due_date_is_missing(task_service):
+# Test Case 5: missing_priority_field
+def test_missing_priority_field(task_service):
     input_data = {
-        "Title": "Prepare slides",
-        "Description": "Slides for team meeting",
-        "Priority": "Medium",
+        "Description": "Priority not set",
+        "Due_date": "2024-07-14",
+        "Location": "Ames",
+        "Title": "Missing priority",
         "User_name": "eve"
     }
-    with pytest.raises(ValidationError) as exc:
-        TaskCreate(
-            title=input_data["Title"],
-            description=input_data["Description"],
-            priority=map_priority(input_data["Priority"]),
-            user_name=input_data["User_name"]
-        )
-    assert "due_date" in str(exc.value)
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Missing required field: Priority"}
+    assert status == 400
 
-# Test Case 6: Task Creation Fails When User_name Is Missing
-def test_task_creation_fails_when_user_name_is_missing(task_service):
+# Test Case 6: missing_due_date_field
+def test_missing_due_date_field(task_service):
     input_data = {
-        "Title": "Plan sprint",
-        "Description": "Sprint planning for next cycle",
+        "Description": "No due date provided",
+        "Location": "Boone",
         "Priority": "High",
-        "Due date": "2024-07-05"
+        "Title": "Missing due date",
+        "User_name": "frank"
     }
-    with pytest.raises(ValidationError) as exc:
-        TaskCreate(
-            title=input_data["Title"],
-            description=input_data["Description"],
-            priority=map_priority(input_data["Priority"]),
-            due_date=parse_due_date(input_data["Due date"])
-        )
-    assert "user_name" in str(exc.value)
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Missing required field: Due_date"}
+    assert status == 400
 
-# Test Case 7: Task Creation Fails When Extra Fields Are Provided
-def test_task_creation_fails_when_extra_fields_are_provided(task_service):
+# Test Case 7: missing_user_name_field
+def test_missing_user_name_field(task_service):
     input_data = {
-        "Title": "Book meeting room",
-        "Description": "Reserve room for team meeting",
-        "Priority": "Low",
-        "Due date": "2024-07-12",
-        "User_name": "frank",
-        "Status": "Open"
-    }
-    with pytest.raises(ValidationError) as exc:
-        TaskCreate(
-            title=input_data["Title"],
-            description=input_data["Description"],
-            priority=map_priority(input_data["Priority"]),
-            due_date=parse_due_date(input_data["Due date"]),
-            user_name=input_data["User_name"],
-            Status=input_data["Status"]
-        )
-    assert "extra fields" in str(exc.value) or "Status" in str(exc.value)
-
-# Test Case 8: Task Creation Fails With Empty Title
-def test_task_creation_fails_with_empty_title(task_service):
-    input_data = {
-        "Title": "",
-        "Description": "Empty title test",
+        "Description": "No user name",
+        "Due_date": "2024-07-15",
+        "Location": "Ames",
         "Priority": "Medium",
-        "Due date": "2024-07-17",
+        "Title": "Missing user name"
+    }
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Missing required field: User_name"}
+    assert status == 400
+
+# Test Case 8: missing_location_field
+def test_missing_location_field(task_service):
+    input_data = {
+        "Description": "Location not provided",
+        "Due_date": "2024-07-16",
+        "Priority": "Low",
+        "Title": "No location",
         "User_name": "gina"
     }
-    with pytest.raises(ValidationError) as exc:
-        TaskCreate(
-            title=input_data["Title"],
-            description=input_data["Description"],
-            priority=map_priority(input_data["Priority"]),
-            due_date=parse_due_date(input_data["Due date"]),
-            user_name=input_data["User_name"]
-        )
-    assert "title" in str(exc.value)
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Missing required field: Location"}
+    assert status == 400
 
-# Test Case 9: Task Creation Fails With Invalid Priority Value
-def test_task_creation_fails_with_invalid_priority_value(task_service):
+# Test Case 9: invalid_location_field
+def test_invalid_location_field(task_service):
     input_data = {
-        "Title": "Sync calendar",
-        "Description": "Ensure all events are synced",
-        "Priority": "Urgent",
-        "Due date": "2024-07-09",
-        "User_name": "harry"
-    }
-    with pytest.raises(ValidationError) as exc:
-        TaskCreate(
-            title=input_data["Title"],
-            description=input_data["Description"],
-            priority=map_priority(input_data["Priority"]),  # None
-            due_date=parse_due_date(input_data["Due date"]),
-            user_name=input_data["User_name"]
-        )
-    assert "priority" in str(exc.value)
-
-# Test Case 10: Task Creation Fails With Invalid Due Date Format
-def test_task_creation_fails_with_invalid_due_date_format(task_service):
-    input_data = {
-        "Title": "Send invoice",
-        "Description": "Invoice to customer",
-        "Priority": "Medium",
-        "Due date": "07-20-2024",
-        "User_name": "ian"
-    }
-    with pytest.raises(ValidationError) as exc:
-        TaskCreate(
-            title=input_data["Title"],
-            description=input_data["Description"],
-            priority=map_priority(input_data["Priority"]),
-            due_date=parse_due_date(input_data["Due date"]),
-            user_name=input_data["User_name"]
-        )
-    assert "due_date" in str(exc.value)
-
-# Test Case 11: Task Creation Fails With Due Date In The Past
-def test_task_creation_fails_with_due_date_in_the_past(task_service):
-    input_data = {
-        "Title": "Update documentation",
-        "Description": "Complete documentation update",
-        "Priority": "Low",
-        "Due date": "2022-01-01",
-        "User_name": "jane"
-    }
-    # Pydantic does not check for past dates, so this must be handled in business logic.
-    # Simulate repository or service raising an error.
-    task_create = TaskCreate(
-        title=input_data["Title"],
-        description=input_data["Description"],
-        priority=map_priority(input_data["Priority"]),
-        due_date=parse_due_date(input_data["Due date"]),
-        user_name=input_data["User_name"]
-    )
-    with patch.object(TaskService, 'create_task', side_effect=ValueError("Due date cannot be in the past")):
-        with pytest.raises(ValueError) as exc:
-            task_service.create_task(task_create)
-        assert "Due date cannot be in the past" in str(exc.value)
-
-# Test Case 12: Task Creation With Maximum Title Length
-def test_task_creation_with_maximum_title_length(task_service, mock_repository):
-    max_title = "T" * 100
-    input_data = {
-        "Title": max_title,
-        "Description": "Title length boundary test",
-        "Priority": "Medium",
-        "Due date": "2024-07-30",
-        "User_name": "kate"
-    }
-    task_create = TaskCreate(
-        title=input_data["Title"],
-        description=input_data["Description"],
-        priority=map_priority(input_data["Priority"]),
-        due_date=parse_due_date(input_data["Due date"]),
-        user_name=input_data["User_name"]
-    )
-    expected_task = Task(
-        id=1,
-        title=task_create.title,
-        description=task_create.description,
-        priority=task_create.priority,
-        due_date=task_create.due_date,
-        user_name=task_create.user_name
-    )
-    mock_repository.add_task.return_value = expected_task
-    result = task_service.create_task(task_create)
-    assert result == expected_task
-
-# Test Case 13: Task Creation With Maximum Description Length
-def test_task_creation_with_maximum_description_length(task_service, mock_repository):
-    max_description = "D" * 1000
-    input_data = {
-        "Title": "Boundary test",
-        "Description": max_description,
-        "Priority": "Low",
-        "Due date": "2024-07-29",
-        "User_name": "leo"
-    }
-    task_create = TaskCreate(
-        title=input_data["Title"],
-        description=input_data["Description"],
-        priority=map_priority(input_data["Priority"]),
-        due_date=parse_due_date(input_data["Due date"]),
-        user_name=input_data["User_name"]
-    )
-    expected_task = Task(
-        id=1,
-        title=task_create.title,
-        description=task_create.description,
-        priority=task_create.priority,
-        due_date=task_create.due_date,
-        user_name=task_create.user_name
-    )
-    mock_repository.add_task.return_value = expected_task
-    result = task_service.create_task(task_create)
-    assert result == expected_task
-
-# Test Case 14: Task Creation Fails With Empty Description
-def test_task_creation_fails_with_empty_description(task_service):
-    input_data = {
-        "Title": "Empty description test",
-        "Description": "",
-        "Priority": "Medium",
-        "Due date": "2024-07-19",
-        "User_name": "mona"
-    }
-    with pytest.raises(ValidationError) as exc:
-        TaskCreate(
-            title=input_data["Title"],
-            description=input_data["Description"],
-            priority=map_priority(input_data["Priority"]),
-            due_date=parse_due_date(input_data["Due date"]),
-            user_name=input_data["User_name"]
-        )
-    assert "description" in str(exc.value)
-
-# Test Case 15: Task Creation Succeeds With Whitespace In Fields
-def test_task_creation_succeeds_with_whitespace_in_fields(task_service, mock_repository):
-    input_data = {
-        "Title": "  Plan event  ",
-        "Description": "  Discuss logistics  ",
+        "Description": "Location is not Ames or Boone",
+        "Due_date": "2024-07-17",
+        "Location": "Des Moines",
         "Priority": "High",
-        "Due date": "2024-07-22",
-        "User_name": " nina "
+        "Title": "Invalid location",
+        "User_name": "henry"
     }
-    task_create = TaskCreate(
-        title=strip_whitespace(input_data["Title"]),
-        description=strip_whitespace(input_data["Description"]),
-        priority=map_priority(input_data["Priority"]),
-        due_date=parse_due_date(input_data["Due date"]),
-        user_name=strip_whitespace(input_data["User_name"])
-    )
-    expected_task = Task(
-        id=1,
-        title=task_create.title,
-        description=task_create.description,
-        priority=task_create.priority,
-        due_date=task_create.due_date,
-        user_name=task_create.user_name
-    )
-    mock_repository.add_task.return_value = expected_task
-    result = task_service.create_task(task_create)
-    assert result == expected_task
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Invalid Location. Allowed values: Ames, Boone"}
+    assert status == 400
 
-# Test Case 16: Task Creation Fails With Invalid JSON Format
-def test_task_creation_fails_with_invalid_json_format(task_service):
-    input_data = "INVALID_JSON"
-    with pytest.raises(TypeError):
-        TaskCreate(**input_data)
+# Test Case 10: location_case_sensitivity
+def test_location_case_sensitivity(task_service):
+    input_data = {
+        "Description": "Testing case sensitivity for location",
+        "Due_date": "2024-07-18",
+        "Location": "ames",
+        "Priority": "Medium",
+        "Title": "Case sensitivity test",
+        "User_name": "irene"
+    }
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Invalid Location. Allowed values: Ames, Boone"}
+    assert status == 400
+
+# Test Case 11: location_whitespace
+def test_location_whitespace(task_service):
+    input_data = {
+        "Description": "Location field contains whitespace",
+        "Due_date": "2024-07-19",
+        "Location": " Ames ",
+        "Priority": "High",
+        "Title": "Whitespace in location",
+        "User_name": "jack"
+    }
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Invalid Location. Allowed values: Ames, Boone"}
+    assert status == 400
+
+# Test Case 12: all_fields_max_length
+def test_all_fields_max_length(task_service, mock_repository):
+    input_data = {
+        "Description": repeat("D", 1000),
+        "Due_date": "2024-12-31",
+        "Location": "Ames",
+        "Priority": "High",
+        "Title": repeat("T", 255),
+        "User_name": repeat("U", 255)
+    }
+    expected_response = {
+        "Description": repeat("D", 1000),
+        "Due_date": "2024-12-31",
+        "Location": "Ames",
+        "Priority": "High",
+        "Title": repeat("T", 255),
+        "User_name": repeat("U", 255),
+        "message": "Task created successfully"
+    }
+    mock_repository.add_task.return_value = expected_response
+    response, status = task_service.create_task(input_data)
+    assert response == expected_response
+    assert status == 201
+
+# Test Case 13: empty_string_fields
+def test_empty_string_fields(task_service):
+    input_data = {
+        "Description": "",
+        "Due_date": "",
+        "Location": "",
+        "Priority": "",
+        "Title": "",
+        "User_name": ""
+    }
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Missing required field: Title"}
+    assert status == 400
+
+# Test Case 14: extra_fields_ignored
+def test_extra_fields_ignored(task_service, mock_repository):
+    input_data = {
+        "Description": "This task has extra data",
+        "Due_date": "2024-08-01",
+        "ExtraField1": "Some value",
+        "ExtraField2": 1234,
+        "Location": "Boone",
+        "Priority": "Low",
+        "Title": "Task with extra fields",
+        "User_name": "karen"
+    }
+    expected_response = {
+        "Description": "This task has extra data",
+        "Due_date": "2024-08-01",
+        "Location": "Boone",
+        "Priority": "Low",
+        "Title": "Task with extra fields",
+        "User_name": "karen",
+        "message": "Task created successfully"
+    }
+    mock_repository.add_task.return_value = expected_response
+    response, status = task_service.create_task(input_data)
+    assert response == expected_response
+    assert status == 201
+
+# Test Case 15: due_date_invalid_format
+def test_due_date_invalid_format(task_service):
+    input_data = {
+        "Description": "Due date is invalid",
+        "Due_date": "07/20/2024",
+        "Location": "Ames",
+        "Priority": "Medium",
+        "Title": "Task with bad date",
+        "User_name": "linda"
+    }
+    response, status = task_service.create_task(input_data)
+    assert response == {"error": "Invalid Due_date format. Expected YYYY-MM-DD"}
+    assert status == 400

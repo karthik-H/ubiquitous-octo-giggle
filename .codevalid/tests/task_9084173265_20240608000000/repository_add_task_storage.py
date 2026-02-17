@@ -1,287 +1,292 @@
 import pytest
 from app.repositories.task_repository import TaskRepository
-from app.domain.models.task import TaskCreate
-from datetime import date
-
-def priority_str_to_int(priority):
-    mapping = {"Low": 1, "Medium": 3, "High": 5}
-    return mapping.get(priority, None)
-
-def make_task_create(data):
-    # Convert string priority to int if needed
-    fields = {}
-    for k, v in data.items():
-        if k.lower() == "priority":
-            if isinstance(v, str):
-                fields[k] = priority_str_to_int(v)
-            else:
-                fields[k] = v
-        elif k.lower() == "due date":
-            if isinstance(v, str) and v:
-                try:
-                    fields["due_date"] = date.fromisoformat(v)
-                except Exception:
-                    fields["due_date"] = v
-            else:
-                fields["due_date"] = v
-        elif k.lower() == "title":
-            fields["title"] = v
-        elif k.lower() == "description":
-            fields["description"] = v
-        elif k.lower() == "user_name":
-            fields["user_name"] = v
-        else:
-            fields[k] = v
-    return fields
 
 @pytest.fixture
 def repo():
     return TaskRepository()
 
-# Test Case 1: Add task with all valid fields
-def test_add_task_with_all_valid_fields(repo):
+# Helper for max/min length fields
+def repeat(s, n):
+    return s * n
+
+# Test Case 1: test_add_task_success_with_location_ames
+def test_add_task_success_with_location_ames(repo):
     data = {
-        "Description": "Complete unit testing",
-        "Due date": "2024-07-01",
+        "Description": "This is a test task.",
+        "Due_date": "2024-07-01",
+        "Location": "Ames",
         "Priority": "High",
         "Title": "Sample Task",
         "User_name": "alice"
     }
-    task_data = make_task_create(data)
-    task = repo.add_task(TaskCreate(**task_data))
-    assert task.description == "Complete unit testing"
-    assert task.due_date == date(2024, 7, 1)
-    assert task.priority == 5
-    assert task.title == "Sample Task"
-    assert task.user_name == "alice"
-    assert task.id == 1
-    assert len(repo.list_tasks()) == 1
+    response, status = repo.add_task(data)
+    assert status == 201
+    assert response == {
+        "Description": "This is a test task.",
+        "Due_date": "2024-07-01",
+        "Location": "Ames",
+        "Priority": "High",
+        "Title": "Sample Task",
+        "User_name": "alice",
+        "id": 1
+    }
+    assert len(repo.tasks) == 1
 
-# Test Case 2: Add task missing required Title field
-def test_add_task_missing_title(repo):
+# Test Case 2: test_add_task_success_with_location_boone
+def test_add_task_success_with_location_boone(repo):
     data = {
-        "Description": "Missing title",
-        "Due date": "2024-07-01",
+        "Description": "Test for Boone.",
+        "Due_date": "2024-08-15",
+        "Location": "Boone",
         "Priority": "Medium",
+        "Title": "Another Task",
         "User_name": "bob"
     }
-    task_data = make_task_create(data)
-    with pytest.raises(TypeError):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
+    response, status = repo.add_task(data)
+    assert status == 201
+    assert response == {
+        "Description": "Test for Boone.",
+        "Due_date": "2024-08-15",
+        "Location": "Boone",
+        "Priority": "Medium",
+        "Title": "Another Task",
+        "User_name": "bob",
+        "id": 1
+    }
+    assert len(repo.tasks) == 1
 
-# Test Case 3: Add task missing required Description field
-def test_add_task_missing_description(repo):
+# Test Case 3: test_add_task_missing_title
+def test_add_task_missing_title(repo):
     data = {
-        "Due date": "2024-07-02",
+        "Description": "Missing title field.",
+        "Due_date": "2024-07-10",
+        "Location": "Ames",
         "Priority": "Low",
-        "Title": "Task without description",
         "User_name": "charlie"
     }
-    task_data = make_task_create(data)
-    with pytest.raises(TypeError):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
+    response, status = repo.add_task(data)
+    assert status == 400
+    assert response == {"error": "Missing required field: Title"}
 
-# Test Case 4: Add task missing required Priority field
+# Test Case 4: test_add_task_missing_description
+def test_add_task_missing_description(repo):
+    data = {
+        "Due_date": "2024-07-10",
+        "Location": "Ames",
+        "Priority": "Low",
+        "Title": "Task No Description",
+        "User_name": "charlie"
+    }
+    response, status = repo.add_task(data)
+    assert status == 400
+    assert response == {"error": "Missing required field: Description"}
+
+# Test Case 5: test_add_task_missing_priority
 def test_add_task_missing_priority(repo):
     data = {
-        "Description": "Priority not specified",
-        "Due date": "2024-07-03",
-        "Title": "Task without priority",
-        "User_name": "david"
+        "Description": "Priority is missing.",
+        "Due_date": "2024-07-10",
+        "Location": "Ames",
+        "Title": "Task No Priority",
+        "User_name": "dana"
     }
-    task_data = make_task_create(data)
-    with pytest.raises(TypeError):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
+    response, status = repo.add_task(data)
+    assert status == 400
+    assert response == {"error": "Missing required field: Priority"}
 
-# Test Case 5: Add task missing required Due date field
+# Test Case 6: test_add_task_missing_due_date
 def test_add_task_missing_due_date(repo):
     data = {
-        "Description": "Due date not specified",
+        "Description": "Due date is missing.",
+        "Location": "Boone",
         "Priority": "High",
-        "Title": "Task without due date",
-        "User_name": "eve"
+        "Title": "Task No Due Date",
+        "User_name": "eva"
     }
-    task_data = make_task_create(data)
-    with pytest.raises(TypeError):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
+    response, status = repo.add_task(data)
+    assert status == 400
+    assert response == {"error": "Missing required field: Due_date"}
 
-# Test Case 6: Add task missing required User_name field
+# Test Case 7: test_add_task_missing_user_name
 def test_add_task_missing_user_name(repo):
     data = {
-        "Description": "User name not specified",
-        "Due date": "2024-07-04",
+        "Description": "User name is missing.",
+        "Due_date": "2024-07-10",
+        "Location": "Ames",
         "Priority": "Medium",
-        "Title": "Task without user name"
+        "Title": "Task No User Name"
     }
-    task_data = make_task_create(data)
-    with pytest.raises(TypeError):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
+    response, status = repo.add_task(data)
+    assert status == 400
+    assert response == {"error": "Missing required field: User_name"}
 
-# Test Case 7: Add task with extra field
-def test_add_task_with_extra_field(repo):
+# Test Case 8: test_add_task_missing_location
+def test_add_task_missing_location(repo):
     data = {
-        "Description": "Testing extra field",
-        "Due date": "2024-07-05",
-        "ExtraField": "should not be accepted",
+        "Description": "Location is missing.",
+        "Due_date": "2024-07-10",
         "Priority": "Low",
-        "Title": "Task with extra field",
+        "Title": "Task No Location",
         "User_name": "frank"
     }
-    task_data = make_task_create(data)
-    with pytest.raises(TypeError):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
+    response, status = repo.add_task(data)
+    assert status == 400
+    assert response == {"error": "Missing required field: Location"}
 
-# Test Case 8: Add task with empty string for required fields
-def test_add_task_with_empty_strings(repo):
+# Test Case 9: test_add_task_invalid_location
+def test_add_task_invalid_location(repo):
     data = {
-        "Description": "",
-        "Due date": "",
-        "Priority": "",
-        "Title": "",
-        "User_name": ""
-    }
-    task_data = make_task_create(data)
-    with pytest.raises(Exception):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
-
-# Test Case 9: Add task with invalid priority value
-def test_add_task_with_invalid_priority(repo):
-    data = {
-        "Description": "Priority not accepted",
-        "Due date": "2024-07-06",
-        "Priority": "Urgent",
-        "Title": "Task invalid priority",
-        "User_name": "grace"
-    }
-    task_data = make_task_create(data)
-    with pytest.raises(Exception):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
-
-# Test Case 10: Add task with invalid due date format
-def test_add_task_with_invalid_due_date_format(repo):
-    data = {
-        "Description": "Due date wrong format",
-        "Due date": "07/07/2024",
-        "Priority": "Medium",
-        "Title": "Task invalid due date",
-        "User_name": "harry"
-    }
-    task_data = make_task_create(data)
-    with pytest.raises(Exception):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
-
-# Test Case 11: Add task with Title at maximum allowed length
-def test_add_task_with_title_max_length(repo):
-    max_title = "T" * 100
-    data = {
-        "Description": "Boundary test for title length",
-        "Due date": "2024-07-08",
+        "Description": "Invalid location value.",
+        "Due_date": "2024-07-10",
+        "Location": "Des Moines",
         "Priority": "High",
-        "Title": max_title,
-        "User_name": "ivan"
+        "Title": "Task Invalid Location",
+        "User_name": "george"
     }
-    task_data = make_task_create(data)
-    task = repo.add_task(TaskCreate(**task_data))
-    assert task.title == max_title
-    assert task.id == 1
-    assert len(repo.list_tasks()) == 1
+    response, status = repo.add_task(data)
+    assert status == 400
+    assert response == {"error": "Location must be either 'Ames' or 'Boone'"}
 
-# Test Case 12: Add task with duplicate Title
-def test_add_task_with_duplicate_title(repo):
+# Test Case 10: test_add_task_empty_string_location
+def test_add_task_empty_string_location(repo):
+    data = {
+        "Description": "Empty location value.",
+        "Due_date": "2024-07-10",
+        "Location": "",
+        "Priority": "Low",
+        "Title": "Task Empty Location",
+        "User_name": "hannah"
+    }
+    response, status = repo.add_task(data)
+    assert status == 400
+    assert response == {"error": "Location must be either 'Ames' or 'Boone'"}
+
+# Test Case 11: test_add_task_all_fields_min_length
+def test_add_task_all_fields_min_length(repo):
+    data = {
+        "Description": "D",
+        "Due_date": "2024-01-01",
+        "Location": "Ames",
+        "Priority": "L",
+        "Title": "T",
+        "User_name": "u"
+    }
+    response, status = repo.add_task(data)
+    assert status == 201
+    assert response == {
+        "Description": "D",
+        "Due_date": "2024-01-01",
+        "Location": "Ames",
+        "Priority": "L",
+        "Title": "T",
+        "User_name": "u",
+        "id": 1
+    }
+    assert len(repo.tasks) == 1
+
+# Test Case 12: test_add_task_all_fields_max_length
+def test_add_task_all_fields_max_length(repo):
+    data = {
+        "Description": repeat("D", 1024),
+        "Due_date": "2100-12-31",
+        "Location": "Boone",
+        "Priority": "High",
+        "Title": repeat("T", 255),
+        "User_name": repeat("U", 128)
+    }
+    response, status = repo.add_task(data)
+    assert status == 201
+    assert response == {
+        "Description": repeat("D", 1024),
+        "Due_date": "2100-12-31",
+        "Location": "Boone",
+        "Priority": "High",
+        "Title": repeat("T", 255),
+        "User_name": repeat("U", 128),
+        "id": 1
+    }
+    assert len(repo.tasks) == 1
+
+# Test Case 13: test_add_task_duplicate_data_assigns_unique_id
+def test_add_task_duplicate_data_assigns_unique_id(repo):
     data1 = {
-        "Description": "First instance",
-        "Due date": "2024-07-09",
+        "Description": "Same data",
+        "Due_date": "2024-09-01",
+        "Location": "Ames",
         "Priority": "Medium",
         "Title": "Duplicate Task",
-        "User_name": "jane"
+        "User_name": "ian"
     }
     data2 = {
-        "Description": "Second instance",
-        "Due date": "2024-07-10",
-        "Priority": "High",
+        "Description": "Same data",
+        "Due_date": "2024-09-01",
+        "Location": "Ames",
+        "Priority": "Medium",
         "Title": "Duplicate Task",
-        "User_name": "jane"
+        "User_name": "ian"
     }
-    task1 = repo.add_task(TaskCreate(**make_task_create(data1)))
-    task2 = repo.add_task(TaskCreate(**make_task_create(data2)))
-    assert task1.title == task2.title
-    assert task1.id != task2.id
-    assert len(repo.list_tasks()) == 2
-
-# Test Case 13: Add task with minimum length valid fields
-def test_add_task_with_min_length_fields(repo):
-    data = {
-        "Description": "B",
-        "Due date": "2024-07-11",
-        "Priority": "Low",
-        "Title": "A",
-        "User_name": "C"
+    response1, status1 = repo.add_task(data1)
+    response2, status2 = repo.add_task(data2)
+    assert status1 == 201
+    assert status2 == 201
+    assert response1 == {
+        "Description": "Same data",
+        "Due_date": "2024-09-01",
+        "Location": "Ames",
+        "Priority": "Medium",
+        "Title": "Duplicate Task",
+        "User_name": "ian",
+        "id": 1
     }
-    task_data = make_task_create(data)
-    task = repo.add_task(TaskCreate(**task_data))
-    assert task.description == "B"
-    assert task.due_date == date(2024, 7, 11)
-    assert task.priority == 1
-    assert task.title == "A"
-    assert task.user_name == "C"
-    assert task.id == 1
-    assert len(repo.list_tasks()) == 1
+    assert response2 == {
+        "Description": "Same data",
+        "Due_date": "2024-09-01",
+        "Location": "Ames",
+        "Priority": "Medium",
+        "Title": "Duplicate Task",
+        "User_name": "ian",
+        "id": 2
+    }
+    assert len(repo.tasks) == 2
 
-# Test Case 14: ID increment for multiple tasks
-def test_id_increment_for_multiple_tasks(repo):
+# Test Case 14: test_add_task_id_counter_increment
+def test_add_task_id_counter_increment(repo):
     data1 = {
-        "Description": "First",
-        "Due date": "2024-07-12",
+        "Description": "First in list.",
+        "Due_date": "2024-10-01",
+        "Location": "Ames",
         "Priority": "Low",
         "Title": "First Task",
-        "User_name": "dan"
+        "User_name": "jane"
     }
     data2 = {
-        "Description": "Second",
-        "Due date": "2024-07-13",
-        "Priority": "Medium",
+        "Description": "Second in list.",
+        "Due_date": "2024-10-02",
+        "Location": "Boone",
+        "Priority": "High",
         "Title": "Second Task",
-        "User_name": "dan"
+        "User_name": "kyle"
     }
-    task1 = repo.add_task(TaskCreate(**make_task_create(data1)))
-    task2 = repo.add_task(TaskCreate(**make_task_create(data2)))
-    assert task1.id == 1
-    assert task2.id == 2
-    assert len(repo.list_tasks()) == 2
-
-# Test Case 15: Add task with null values for required fields
-def test_add_task_with_null_values(repo):
-    data = {
-        "Description": None,
-        "Due date": None,
-        "Priority": None,
-        "Title": None,
-        "User_name": None
-    }
-    task_data = make_task_create(data)
-    with pytest.raises(Exception):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
-
-# Test Case 16: Add task with whitespace-only values for required fields
-def test_add_task_with_whitespace_only_fields(repo):
-    data = {
-        "Description": "   ",
-        "Due date": "2024-07-14",
+    response1, status1 = repo.add_task(data1)
+    response2, status2 = repo.add_task(data2)
+    assert status1 == 201
+    assert status2 == 201
+    assert response1 == {
+        "Description": "First in list.",
+        "Due_date": "2024-10-01",
+        "Location": "Ames",
         "Priority": "Low",
-        "Title": " ",
-        "User_name": "   "
+        "Title": "First Task",
+        "User_name": "jane",
+        "id": 1
     }
-    task_data = make_task_create(data)
-    with pytest.raises(Exception):
-        repo.add_task(TaskCreate(**task_data))
-    assert len(repo.list_tasks()) == 0
+    assert response2 == {
+        "Description": "Second in list.",
+        "Due_date": "2024-10-02",
+        "Location": "Boone",
+        "Priority": "High",
+        "Title": "Second Task",
+        "User_name": "kyle",
+        "id": 2
+    }
+    assert len(repo.tasks) == 2
