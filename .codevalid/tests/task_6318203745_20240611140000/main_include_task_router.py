@@ -6,7 +6,6 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def reset_tasks():
-    # Reset the repository between tests if possible
     try:
         from app.controllers.task_controller import task_service
         task_service.repository._tasks.clear()
@@ -14,179 +13,306 @@ def reset_tasks():
     except Exception:
         pass
 
-def test_add_task_success():
-    """Test Case 1: Add Task - Success"""
+def test_create_task_valid_ames():
+    """Test Case 1: Create a task with valid attributes and Location 'Ames'"""
     payload = {
-        'description': 'Purchase milk from store',
-        'due_date': '2024-07-01',
-        'title': 'Buy milk'
+        'Description': 'Purchase milk, eggs, and bread',
+        'Due_date': '2024-06-15',
+        'Location': 'Ames',
+        'Priority': 'High',
+        'Title': 'Buy groceries',
+        'User_name': 'alice'
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 201
     data = response.json()
-    assert data == {
-        'description': 'Purchase milk from store',
-        'due_date': '2024-07-01',
-        'id': 1,
-        'status': 'pending',
-        'title': 'Buy milk'
-    }
+    assert data['Description'] == payload['Description']
+    assert data['Due_date'] == payload['Due_date']
+    assert data['Location'] == payload['Location']
+    assert data['Priority'] == payload['Priority']
+    assert data['Title'] == payload['Title']
+    assert data['User_name'] == payload['User_name']
+    assert 'id' in data
 
-def test_add_task_missing_title():
-    """Test Case 2: Add Task - Missing Title"""
+def test_create_task_valid_boone():
+    """Test Case 2: Create a task with valid attributes and Location 'Boone'"""
     payload = {
-        'description': 'No title provided',
-        'due_date': '2024-07-01'
-    }
-    response = client.post("/tasks", json=payload)
-    assert response.status_code == 400
-    data = response.json()
-    assert data == {'detail': "Field 'title' is required."}
-
-def test_add_task_empty_title():
-    """Test Case 3: Add Task - Empty Title"""
-    payload = {
-        'description': 'Title is empty',
-        'due_date': '2024-07-01',
-        'title': ''
-    }
-    response = client.post("/tasks", json=payload)
-    assert response.status_code == 400
-    data = response.json()
-    assert data == {'detail': "Field 'title' cannot be empty."}
-
-def test_add_task_missing_description():
-    """Test Case 4: Add Task - Missing Description"""
-    payload = {
-        'due_date': '2024-07-01',
-        'title': 'Do homework'
+        'Description': 'Fix the kitchen faucet',
+        'Due_date': '2024-06-20',
+        'Location': 'Boone',
+        'Priority': 'Medium',
+        'Title': 'Call plumber',
+        'User_name': 'bob'
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 201
     data = response.json()
-    assert data == {
-        'description': None,
-        'due_date': '2024-07-01',
-        'id': 2,
-        'status': 'pending',
-        'title': 'Do homework'
-    }
+    assert data['Description'] == payload['Description']
+    assert data['Due_date'] == payload['Due_date']
+    assert data['Location'] == payload['Location']
+    assert data['Priority'] == payload['Priority']
+    assert data['Title'] == payload['Title']
+    assert data['User_name'] == payload['User_name']
+    assert 'id' in data
 
-def test_add_task_invalid_due_date_format():
-    """Test Case 5: Add Task - Invalid Due Date Format"""
+def test_create_task_missing_title():
+    """Test Case 3: Missing Title attribute"""
     payload = {
-        'description': 'Check on mom',
-        'due_date': '07-01-2024',
-        'title': 'Call mom'
-    }
-    response = client.post("/tasks", json=payload)
-    assert response.status_code == 400
-    data = response.json()
-    assert data == {'detail': "Field 'due_date' must be in ISO format (YYYY-MM-DD)."}
-
-def test_add_task_large_title():
-    """Test Case 6: Add Task - Large Title"""
-    payload = {
-        'description': 'Title exceeds maximum length',
-        'due_date': '2024-07-01',
-        'title': 'T' * 256
+        'Description': 'Go for a walk',
+        'Due_date': '2024-06-17',
+        'Location': 'Ames',
+        'Priority': 'Low',
+        'User_name': 'charlie'
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 400
-    data = response.json()
-    assert data == {'detail': "Field 'title' exceeds maximum allowed length."}
+    assert response.json() == {'error': 'Missing required attribute: Title'}
 
-def test_add_task_title_at_maximum_length():
-    """Test Case 7: Add Task - Title at Maximum Length"""
+def test_create_task_missing_description():
+    """Test Case 4: Missing Description attribute"""
     payload = {
-        'description': 'Title is at maximum length',
-        'due_date': '2024-07-01',
-        'title': 'T' * 255
+        'Due_date': '2024-06-18',
+        'Location': 'Boone',
+        'Priority': 'Low',
+        'Title': 'Read book',
+        'User_name': 'diana'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': 'Missing required attribute: Description'}
+
+def test_create_task_missing_priority():
+    """Test Case 5: Missing Priority attribute"""
+    payload = {
+        'Description': 'Organize and clean garage',
+        'Due_date': '2024-06-21',
+        'Location': 'Ames',
+        'Title': 'Clean garage',
+        'User_name': 'eve'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': 'Missing required attribute: Priority'}
+
+def test_create_task_missing_due_date():
+    """Test Case 6: Missing Due_date attribute"""
+    payload = {
+        'Description': 'Finish and submit monthly report',
+        'Location': 'Boone',
+        'Priority': 'High',
+        'Title': 'Submit report',
+        'User_name': 'frank'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': 'Missing required attribute: Due_date'}
+
+def test_create_task_missing_user_name():
+    """Test Case 7: Missing User_name attribute"""
+    payload = {
+        'Description': 'Pay electricity and water bills',
+        'Due_date': '2024-06-22',
+        'Location': 'Ames',
+        'Priority': 'Medium',
+        'Title': 'Pay bills'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': 'Missing required attribute: User_name'}
+
+def test_create_task_missing_location():
+    """Test Case 8: Missing Location attribute"""
+    payload = {
+        'Description': 'Project kickoff meeting',
+        'Due_date': '2024-06-23',
+        'Priority': 'High',
+        'Title': 'Attend meeting',
+        'User_name': 'gina'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': 'Missing required attribute: Location'}
+
+def test_create_task_invalid_location():
+    """Test Case 9: Invalid Location value"""
+    payload = {
+        'Description': 'Clean both inside and outside',
+        'Due_date': '2024-06-24',
+        'Location': 'Des Moines',
+        'Priority': 'Low',
+        'Title': 'Wash car',
+        'User_name': 'henry'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': "Invalid Location: must be 'Ames' or 'Boone'"}
+
+def test_create_task_location_incorrect_casing():
+    """Test Case 10: Location with incorrect casing"""
+    payload = {
+        'Description': 'Order from favorite shop',
+        'Due_date': '2024-06-25',
+        'Location': 'ames',
+        'Priority': 'Medium',
+        'Title': 'Order pizza',
+        'User_name': 'irene'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': "Invalid Location: must be 'Ames' or 'Boone'"}
+
+def test_create_task_location_trailing_whitespace():
+    """Test Case 11: Location with leading/trailing whitespace"""
+    payload = {
+        'Description': 'Topic: API testing',
+        'Due_date': '2024-06-26',
+        'Location': 'Ames ',
+        'Priority': 'High',
+        'Title': 'Write blog post',
+        'User_name': 'jack'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': "Invalid Location: must be 'Ames' or 'Boone'"}
+
+def test_create_task_empty_title():
+    """Test Case 12: Empty Title value"""
+    payload = {
+        'Description': 'Test task with empty title',
+        'Due_date': '2024-06-27',
+        'Location': 'Boone',
+        'Priority': 'Low',
+        'Title': '',
+        'User_name': 'karen'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': 'Title cannot be empty'}
+
+def test_create_task_empty_description():
+    """Test Case 13: Empty Description value"""
+    payload = {
+        'Description': '',
+        'Due_date': '2024-06-28',
+        'Location': 'Ames',
+        'Priority': 'Medium',
+        'Title': 'Test empty description',
+        'User_name': 'leo'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': 'Description cannot be empty'}
+
+def test_create_task_invalid_due_date_format():
+    """Test Case 14: Invalid Due_date format"""
+    payload = {
+        'Description': 'Due date is not ISO',
+        'Due_date': '15-06-2024',
+        'Location': 'Boone',
+        'Priority': 'High',
+        'Title': 'Test invalid due date',
+        'User_name': 'maya'
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': 'Invalid Due_date format. Expected YYYY-MM-DD'}
+
+def test_create_task_extra_attribute():
+    """Test Case 15: Request body contains extra attribute"""
+    payload = {
+        'Description': 'Has extra field',
+        'Due_date': '2024-06-29',
+        'Extra': 'should not be here',
+        'Location': 'Ames',
+        'Priority': 'Low',
+        'Title': 'Extra attribute test',
+        'User_name': 'nina'
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 201
     data = response.json()
-    assert data == {
-        'description': 'Title is at maximum length',
-        'due_date': '2024-07-01',
-        'id': 3,
-        'status': 'pending',
-        'title': 'T' * 255
-    }
+    assert data['Description'] == payload['Description']
+    assert data['Due_date'] == payload['Due_date']
+    assert data['Location'] == payload['Location']
+    assert data['Priority'] == payload['Priority']
+    assert data['Title'] == payload['Title']
+    assert data['User_name'] == payload['User_name']
+    assert 'id' in data
 
-def test_add_task_no_request_body():
-    """Test Case 8: Add Task - No Request Body"""
-    response = client.post("/tasks", json={})
-    assert response.status_code == 400
-    data = response.json()
-    assert data == {'detail': 'Request body is required.'}
-
-def test_add_task_extra_fields():
-    """Test Case 9: Add Task - Extra Fields"""
+def test_create_task_all_fields_max_length():
+    """Test Case 16: All fields at maximum length"""
+    max_len = 255
     payload = {
-        'description': 'Workout session',
-        'due_date': '2024-07-01',
-        'priority': 'high',
-        'title': 'Go to gym'
+        'Description': 'D' * max_len,
+        'Due_date': '2024-06-30',
+        'Location': 'Ames',
+        'Priority': 'P' * max_len,
+        'Title': 'T' * max_len,
+        'User_name': 'U' * max_len
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 201
     data = response.json()
-    assert data == {
-        'description': 'Workout session',
-        'due_date': '2024-07-01',
-        'id': 4,
-        'status': 'pending',
-        'title': 'Go to gym'
-    }
+    assert data['Description'] == payload['Description']
+    assert data['Due_date'] == payload['Due_date']
+    assert data['Location'] == payload['Location']
+    assert data['Priority'] == payload['Priority']
+    assert data['Title'] == payload['Title']
+    assert data['User_name'] == payload['User_name']
+    assert 'id' in data
 
-def test_add_task_duplicate_title():
-    """Test Case 10: Add Task - Duplicate Title"""
-    # First, create the task
-    payload1 = {
-        'description': 'Purchase milk from store',
-        'due_date': '2024-07-01',
-        'title': 'Buy milk'
+def test_create_task_invalid_priority():
+    """Test Case 17: Invalid Priority value"""
+    payload = {
+        'Description': "Priority is 'Urgent'",
+        'Due_date': '2024-07-01',
+        'Location': 'Boone',
+        'Priority': 'Urgent',
+        'Title': 'Invalid priority test',
+        'User_name': 'oliver'
     }
-    client.post("/tasks", json=payload1)
-    # Now, try to create duplicate
-    payload2 = {
-        'description': 'Buy more milk',
-        'due_date': '2024-07-02',
-        'title': 'Buy milk'
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {'error': "Invalid Priority value. Expected 'High', 'Medium', or 'Low'"}
+
+def test_create_task_numeric_user_name():
+    """Test Case 18: User_name is numeric string"""
+    payload = {
+        'Description': 'User_name is numeric string',
+        'Due_date': '2024-07-02',
+        'Location': 'Ames',
+        'Priority': 'Low',
+        'Title': 'Numeric username test',
+        'User_name': '123456'
     }
-    response = client.post("/tasks", json=payload2)
+    response = client.post("/tasks", json=payload)
     assert response.status_code == 201
     data = response.json()
-    assert data == {
-        'description': 'Buy more milk',
-        'due_date': '2024-07-02',
-        'id': 5,
-        'status': 'pending',
-        'title': 'Buy milk'
-    }
+    assert data['Description'] == payload['Description']
+    assert data['Due_date'] == payload['Due_date']
+    assert data['Location'] == payload['Location']
+    assert data['Priority'] == payload['Priority']
+    assert data['Title'] == payload['Title']
+    assert data['User_name'] == payload['User_name']
+    assert 'id' in data
 
-def test_add_task_invalid_content_type():
-    """Test Case 11: Add Task - Invalid Content-Type"""
+def test_create_task_invalid_content_type():
+    """Test Case 19: POST with invalid Content-Type header"""
     payload = {
-        'description': 'Wash clothes',
-        'due_date': '2024-07-01',
-        'title': 'Do laundry'
+        'Description': 'Content-Type is not application/json',
+        'Due_date': '2024-07-03',
+        'Location': 'Ames',
+        'Priority': 'High',
+        'Title': 'Invalid content type',
+        'User_name': 'paul'
     }
     # Send as data, not json, and omit Content-Type header
     response = client.post("/tasks", data=str(payload))
-    assert response.status_code == 415
-    data = response.json()
-    assert data == {'detail': "Unsupported Media Type. Content-Type must be 'application/json'."}
+    assert response.status_code == 400
+    assert response.json() == {'error': 'Content-Type must be application/json'}
 
-def test_post_to_invalid_url():
-    """Test Case 12: POST to Invalid URL"""
-    payload = {
-        'description': 'This should fail',
-        'due_date': '2024-07-01',
-        'title': 'Invalid endpoint'
-    }
-    response = client.post("/taskz", json=payload)
-    assert response.status_code == 404
-    data = response.json()
-    assert data == {'detail': 'Not Found'}
+def test_create_task_empty_request_body():
+    """Test Case 20: POST with empty request body"""
+    response = client.post("/tasks", json={})
+    assert response.status_code == 400
+    assert response.json() == {'error': 'Missing required attributes'}
