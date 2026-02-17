@@ -1,12 +1,10 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-
 import json
 
 client = TestClient(app)
 
-# Utility for generating long titles
 def repeat_char(char, count):
     return char * count
 
@@ -16,137 +14,141 @@ def clear_tasks(monkeypatch):
     Fixture to clear tasks before each test if the service/repository supports it.
     If not, this can be removed or adapted.
     """
-    # If your service/repository has a clear/reset method, call it here.
-    # For example:
-    # from app.repositories.task_repository import TaskRepository
-    # TaskRepository._tasks.clear()
     pass
 
-def test_create_task_success():
+def test_create_task_with_valid_payload():
     payload = {
-        "description": "Write and review unit tests for task controller.",
+        "description": "This is a test task.",
         "due_date": "2024-07-01",
-        "title": "Finish unit test"
+        "title": "Test Task"
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 201
     expected = {
-        "description": "Write and review unit tests for task controller.",
+        "description": "This is a test task.",
         "due_date": "2024-07-01",
-        "id": 1,
-        "status": "pending",
-        "title": "Finish unit test"
+        "id": "generated_task_id",
+        "title": "Test Task"
     }
     assert response.json() == expected
 
-def test_create_task_missing_title():
+def test_create_task_with_missing_title():
     payload = {
-        "description": "Task without a title.",
+        "description": "Missing title field.",
         "due_date": "2024-07-01"
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 400
-    assert response.json() == {"detail": "Field 'title' is required."}
+    assert response.json() == {"error": "Field 'title' is required."}
 
-def test_create_task_invalid_due_date_format():
+def test_create_task_with_empty_title():
     payload = {
-        "description": "due_date is invalid format",
-        "due_date": "01-07-2024",
-        "title": "Check date validation"
+        "description": "Title is empty.",
+        "due_date": "2024-07-01",
+        "title": ""
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 400
-    assert response.json() == {"detail": "Field 'due_date' must be in YYYY-MM-DD format."}
+    assert response.json() == {"error": "Field 'title' cannot be empty."}
 
-def test_create_task_duplicate_title():
-    # First, create the initial task
+def test_create_task_with_maximum_allowed_title_length():
+    max_title = repeat_char("T", 255)
     payload = {
-        "description": "Write and review unit tests for task controller.",
+        "description": "Boundary test for title length.",
         "due_date": "2024-07-01",
-        "title": "Finish unit test"
-    }
-    response = client.post("/tasks", json=payload)
-    assert response.status_code == 201
-
-    # Attempt to create a duplicate
-    duplicate_payload = {
-        "description": "Another task with duplicate title.",
-        "due_date": "2024-07-05",
-        "title": "Finish unit test"
-    }
-    response = client.post("/tasks", json=duplicate_payload)
-    assert response.status_code == 400
-    assert response.json() == {"detail": "Task with this title already exists."}
-
-def test_create_task_empty_body():
-    response = client.post("/tasks", data=json.dumps({}), headers={"Content-Type": "application/json"})
-    assert response.status_code == 400
-    assert response.json() == {"detail": "Request body is empty or invalid."}
-
-def test_create_task_long_title():
-    long_title = repeat_char("T", 255)
-    payload = {
-        "description": "Edge case test for maximum title length.",
-        "due_date": "2024-07-01",
-        "title": long_title
+        "title": max_title
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 201
     expected = {
-        "description": "Edge case test for maximum title length.",
+        "description": "Boundary test for title length.",
         "due_date": "2024-07-01",
-        "id": 2,
-        "status": "pending",
-        "title": long_title
+        "id": "generated_task_id",
+        "title": max_title
     }
     assert response.json() == expected
 
-def test_create_task_overlong_title():
+def test_create_task_with_title_exceeding_maximum_length():
     overlong_title = repeat_char("T", 256)
     payload = {
-        "description": "Title is 256 chars, exceeding limit.",
+        "description": "Title too long.",
         "due_date": "2024-07-01",
         "title": overlong_title
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 400
-    assert response.json() == {"detail": "Field 'title' exceeds maximum length of 255 characters."}
+    assert response.json() == {"error": "Field 'title' exceeds maximum length of 255."}
 
-def test_create_task_null_description():
+def test_create_task_with_missing_description():
     payload = {
-        "description": None,
-        "due_date": "2024-07-02",
-        "title": "Task with no description"
+        "due_date": "2024-07-01",
+        "title": "Task Without Description"
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 201
     expected = {
         "description": None,
-        "due_date": "2024-07-02",
-        "id": 3,
-        "status": "pending",
-        "title": "Task with no description"
+        "due_date": "2024-07-01",
+        "id": "generated_task_id",
+        "title": "Task Without Description"
     }
     assert response.json() == expected
 
-def test_create_task_unexpected_extra_field():
+def test_create_task_with_invalid_due_date_format():
     payload = {
-        "description": "Payload includes an extra field.",
-        "due_date": "2024-07-03",
-        "title": "Extra field test",
-        "unexpected_field": "unexpected_value"
+        "description": "Testing due date format.",
+        "due_date": "01-07-2024",
+        "title": "Invalid Due Date"
     }
     response = client.post("/tasks", json=payload)
     assert response.status_code == 400
-    assert response.json() == {"detail": "Unexpected field 'unexpected_field' in request body."}
+    assert response.json() == {"error": "Field 'due_date' must be in YYYY-MM-DD format."}
 
-def test_create_task_no_content_type():
+def test_create_task_with_past_due_date():
     payload = {
-        "description": "No Content-Type header",
-        "due_date": "2024-07-01",
-        "title": "Missing header"
+        "description": "Due date is in the past.",
+        "due_date": "2023-01-01",
+        "title": "Past Due Date"
     }
-    # Send as data, not as json, and omit Content-Type header
-    response = client.post("/tasks", data=json.dumps(payload))
+    response = client.post("/tasks", json=payload)
     assert response.status_code == 400
-    assert response.json() == {"detail": "Missing or invalid Content-Type header."}
+    assert response.json() == {"error": "Field 'due_date' cannot be in the past."}
+
+def test_create_task_with_no_request_body():
+    response = client.post("/tasks")
+    assert response.status_code == 400
+    assert response.json() == {"error": "Request body is missing or invalid JSON."}
+
+def test_create_task_with_invalid_json_body():
+    response = client.post("/tasks", data="{invalid_json}", headers={"Content-Type": "application/json"})
+    assert response.status_code == 400
+    assert response.json() == {"error": "Request body is missing or invalid JSON."}
+
+def test_create_task_with_duplicate_title():
+    payload = {
+        "description": "First entry.",
+        "due_date": "2024-07-01",
+        "title": "Duplicate Task"
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 201
+
+    duplicate_payload = {
+        "description": "First entry.",
+        "due_date": "2024-07-01",
+        "title": "Duplicate Task"
+    }
+    response = client.post("/tasks", json=duplicate_payload)
+    assert response.status_code == 400
+    assert response.json() == {"error": "A task with this title already exists."}
+
+def test_create_task_with_extra_fields_in_payload():
+    payload = {
+        "description": "Extra field included.",
+        "due_date": "2024-07-01",
+        "priority": "high",
+        "title": "Task With Extra Fields"
+    }
+    response = client.post("/tasks", json=payload)
+    assert response.status_code == 400
+    assert response.json() == {"error": "Field 'priority' is not allowed."}
