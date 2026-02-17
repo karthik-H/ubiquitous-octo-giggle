@@ -408,282 +408,251 @@
       "implementation_id": "task_service_create_task_function",
       "test_cases": [
         {
-          "description": "Successfully create a task when all required fields are present and location is 'Ames'.",
-          "id": "TC001_create_task_success_ames",
+          "description": "Test creation of a task with all required fields and valid location 'Ames'.",
+          "id": "TC01_create_task_success_ames_location",
           "implementation_id": "task_service_create_task_function",
-          "name": "create_task_success_ames",
+          "name": "Create task successfully with valid Ames location",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Complete the quarterly report",
+                "Description": "Complete unit testing",
                 "Due_date": "2024-07-01",
                 "Location": "Ames",
                 "Priority": "High",
-                "Title": "Finish report",
+                "Title": "Sample Task",
+                "User_name": "johndoe"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "message": "Task created successfully",
+                "task": {
+                  "Description": "Complete unit testing",
+                  "Due_date": "2024-07-01",
+                  "Location": "Ames",
+                  "Priority": "High",
+                  "Title": "Sample Task",
+                  "User_name": "johndoe"
+                }
+              }
+            },
+            "when": "TaskService.create_task is called with the provided data"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Test creation of a task with all required fields and valid location 'Boone'.",
+          "id": "TC02_create_task_success_boone_location",
+          "implementation_id": "task_service_create_task_function",
+          "name": "Create task successfully with valid Boone location",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "Description": "Prepare quarterly report",
+                "Due_date": "2024-08-15",
+                "Location": "Boone",
+                "Priority": "Medium",
+                "Title": "Boone Task",
+                "User_name": "janedoe"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "message": "Task created successfully",
+                "task": {
+                  "Description": "Prepare quarterly report",
+                  "Due_date": "2024-08-15",
+                  "Location": "Boone",
+                  "Priority": "Medium",
+                  "Title": "Boone Task",
+                  "User_name": "janedoe"
+                }
+              }
+            },
+            "when": "TaskService.create_task is called with the provided data"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Test creation of a task with location not equal to 'Ames' or 'Boone'.",
+          "id": "TC03_create_task_invalid_location",
+          "implementation_id": "task_service_create_task_function",
+          "name": "Reject task creation with invalid location",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "Description": "Try an unsupported location",
+                "Due_date": "2024-09-10",
+                "Location": "Des Moines",
+                "Priority": "Low",
+                "Title": "Invalid Location Task",
                 "User_name": "alice"
               }
             },
             "then": {
               "response_body_json": {
-                "Description": "Complete the quarterly report",
-                "Due_date": "2024-07-01",
-                "Location": "Ames",
-                "Priority": "High",
-                "Title": "Finish report",
-                "User_name": "alice",
-                "id": "generated_task_id"
-              },
-              "response_status": 201
+                "error": "Invalid location. Only 'Ames' or 'Boone' are allowed."
+              }
             },
-            "when": "TaskService.create_task is called with the above data"
+            "when": "TaskService.create_task is called with the provided data"
           },
-          "type": "positive"
+          "type": "negative"
         },
         {
-          "description": "Successfully create a task when all required fields are present and location is 'Boone'.",
-          "id": "TC002_create_task_success_boone",
+          "description": "Test task creation when the Title field is missing from the request payload.",
+          "id": "TC04_create_task_missing_title",
           "implementation_id": "task_service_create_task_function",
-          "name": "create_task_success_boone",
+          "name": "Reject task creation with missing Title",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Update the homepage banner",
-                "Due_date": "2024-07-15",
-                "Location": "Boone",
-                "Priority": "Medium",
-                "Title": "Update website",
+                "Description": "Missing title field",
+                "Due_date": "2024-10-05",
+                "Location": "Ames",
+                "Priority": "Low",
                 "User_name": "bob"
               }
             },
             "then": {
               "response_body_json": {
-                "Description": "Update the homepage banner",
-                "Due_date": "2024-07-15",
+                "error": "Missing required field: Title"
+              }
+            },
+            "when": "TaskService.create_task is called with the provided data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test task creation when the Description field is missing from the request payload.",
+          "id": "TC05_create_task_missing_description",
+          "implementation_id": "task_service_create_task_function",
+          "name": "Reject task creation with missing Description",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "Due_date": "2024-10-06",
+                "Location": "Boone",
+                "Priority": "High",
+                "Title": "Missing Description",
+                "User_name": "charlie"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Missing required field: Description"
+              }
+            },
+            "when": "TaskService.create_task is called with the provided data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test task creation when the Priority field is missing from the request payload.",
+          "id": "TC06_create_task_missing_priority",
+          "implementation_id": "task_service_create_task_function",
+          "name": "Reject task creation with missing Priority",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "Description": "Priority not included",
+                "Due_date": "2024-11-15",
+                "Location": "Ames",
+                "Title": "Missing Priority",
+                "User_name": "dave"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Missing required field: Priority"
+              }
+            },
+            "when": "TaskService.create_task is called with the provided data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test task creation when the Due_date field is missing from the request payload.",
+          "id": "TC07_create_task_missing_due_date",
+          "implementation_id": "task_service_create_task_function",
+          "name": "Reject task creation with missing Due date",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "Description": "No due date specified",
                 "Location": "Boone",
                 "Priority": "Medium",
-                "Title": "Update website",
-                "User_name": "bob",
-                "id": "generated_task_id"
-              },
-              "response_status": 201
-            },
-            "when": "TaskService.create_task is called with the above data"
-          },
-          "type": "positive"
-        },
-        {
-          "description": "Attempt to create a task with missing Title should fail.",
-          "id": "TC003_create_task_missing_title",
-          "implementation_id": "task_service_create_task_function",
-          "name": "create_task_missing_title",
-          "test_setup": {
-            "given": {
-              "request_body_json": {
-                "Description": "Task without a title",
-                "Due_date": "2024-07-10",
-                "Location": "Ames",
-                "Priority": "Low",
-                "User_name": "carol"
+                "Title": "Missing Due Date",
+                "User_name": "eve"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Missing required attribute: Title"
-              },
-              "response_status": 400
-            },
-            "when": "TaskService.create_task is called with the above data"
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Attempt to create a task with missing Description should fail.",
-          "id": "TC004_create_task_missing_description",
-          "implementation_id": "task_service_create_task_function",
-          "name": "create_task_missing_description",
-          "test_setup": {
-            "given": {
-              "request_body_json": {
-                "Due_date": "2024-07-10",
-                "Location": "Ames",
-                "Priority": "Low",
-                "Title": "No description task",
-                "User_name": "carol"
+                "error": "Missing required field: Due_date"
               }
             },
-            "then": {
-              "response_body_json": {
-                "error": "Missing required attribute: Description"
-              },
-              "response_status": 400
-            },
-            "when": "TaskService.create_task is called with the above data"
+            "when": "TaskService.create_task is called with the provided data"
           },
           "type": "negative"
         },
         {
-          "description": "Attempt to create a task with missing Priority should fail.",
-          "id": "TC005_create_task_missing_priority",
+          "description": "Test task creation when the User_name field is missing from the request payload.",
+          "id": "TC08_create_task_missing_user_name",
           "implementation_id": "task_service_create_task_function",
-          "name": "create_task_missing_priority",
+          "name": "Reject task creation with missing User_name",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Task without priority",
-                "Due_date": "2024-07-10",
-                "Location": "Ames",
-                "Title": "No priority task",
-                "User_name": "carol"
-              }
-            },
-            "then": {
-              "response_body_json": {
-                "error": "Missing required attribute: Priority"
-              },
-              "response_status": 400
-            },
-            "when": "TaskService.create_task is called with the above data"
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Attempt to create a task with missing Due_date should fail.",
-          "id": "TC006_create_task_missing_due_date",
-          "implementation_id": "task_service_create_task_function",
-          "name": "create_task_missing_due_date",
-          "test_setup": {
-            "given": {
-              "request_body_json": {
-                "Description": "Task without due date",
-                "Location": "Ames",
-                "Priority": "Medium",
-                "Title": "No due date task",
-                "User_name": "carol"
-              }
-            },
-            "then": {
-              "response_body_json": {
-                "error": "Missing required attribute: Due_date"
-              },
-              "response_status": 400
-            },
-            "when": "TaskService.create_task is called with the above data"
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Attempt to create a task with missing User_name should fail.",
-          "id": "TC007_create_task_missing_user_name",
-          "implementation_id": "task_service_create_task_function",
-          "name": "create_task_missing_user_name",
-          "test_setup": {
-            "given": {
-              "request_body_json": {
-                "Description": "Task without user name",
-                "Due_date": "2024-07-10",
+                "Description": "User name not provided",
+                "Due_date": "2024-12-01",
                 "Location": "Ames",
                 "Priority": "High",
-                "Title": "No user name task"
+                "Title": "Missing User Name"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Missing required attribute: User_name"
-              },
-              "response_status": 400
-            },
-            "when": "TaskService.create_task is called with the above data"
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Attempt to create a task with missing Location should fail.",
-          "id": "TC008_create_task_missing_location",
-          "implementation_id": "task_service_create_task_function",
-          "name": "create_task_missing_location",
-          "test_setup": {
-            "given": {
-              "request_body_json": {
-                "Description": "Task without location",
-                "Due_date": "2024-07-10",
-                "Priority": "High",
-                "Title": "No location task",
-                "User_name": "carol"
+                "error": "Missing required field: User_name"
               }
             },
-            "then": {
-              "response_body_json": {
-                "error": "Missing required attribute: Location"
-              },
-              "response_status": 400
-            },
-            "when": "TaskService.create_task is called with the above data"
+            "when": "TaskService.create_task is called with the provided data"
           },
           "type": "negative"
         },
         {
-          "description": "Attempt to create a task with an invalid Location should fail.",
-          "id": "TC009_create_task_invalid_location",
+          "description": "Test task creation when the Location field is missing from the request payload.",
+          "id": "TC09_create_task_missing_location",
           "implementation_id": "task_service_create_task_function",
-          "name": "create_task_invalid_location",
+          "name": "Reject task creation with missing Location field",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Task with wrong location",
-                "Due_date": "2024-07-20",
-                "Location": "Des Moines",
-                "Priority": "Medium",
-                "Title": "Invalid location task",
-                "User_name": "david"
-              }
-            },
-            "then": {
-              "response_body_json": {
-                "error": "Invalid location: must be 'Ames' or 'Boone'"
-              },
-              "response_status": 400
-            },
-            "when": "TaskService.create_task is called with the above data"
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Attempt to create a task with valid location but wrong case should fail.",
-          "id": "TC010_create_task_location_case_sensitivity",
-          "implementation_id": "task_service_create_task_function",
-          "name": "create_task_location_case_sensitivity",
-          "test_setup": {
-            "given": {
-              "request_body_json": {
-                "Description": "Location is 'ames' instead of 'Ames'",
-                "Due_date": "2024-07-22",
-                "Location": "ames",
+                "Description": "Location not specified",
+                "Due_date": "2024-12-15",
                 "Priority": "Low",
-                "Title": "Case sensitivity task",
-                "User_name": "erin"
+                "Title": "Missing Location",
+                "User_name": "frank"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Invalid location: must be 'Ames' or 'Boone'"
-              },
-              "response_status": 400
+                "error": "Missing required field: Location"
+              }
             },
-            "when": "TaskService.create_task is called with the above data"
+            "when": "TaskService.create_task is called with the provided data"
           },
           "type": "negative"
         },
         {
-          "description": "Attempt to create a task with empty string values for required fields should fail.",
-          "id": "TC011_create_task_empty_string_fields",
+          "description": "Test task creation when required fields are provided but with empty string values.",
+          "id": "TC10_create_task_empty_string_fields",
           "implementation_id": "task_service_create_task_function",
-          "name": "create_task_empty_string_fields",
+          "name": "Reject task creation with empty string fields",
           "test_setup": {
             "given": {
               "request_body_json": {
                 "Description": "",
                 "Due_date": "",
-                "Location": "",
+                "Location": "Ames",
                 "Priority": "",
                 "Title": "",
                 "User_name": ""
@@ -691,592 +660,593 @@
             },
             "then": {
               "response_body_json": {
-                "error": "Missing or empty required attribute(s): Title, Description, Priority, Due_date, User_name, Location"
-              },
-              "response_status": 400
-            },
-            "when": "TaskService.create_task is called with the above data"
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Create a task with all required fields and additional irrelevant fields should succeed and ignore extra fields.",
-          "id": "TC012_create_task_extra_fields",
-          "implementation_id": "task_service_create_task_function",
-          "name": "create_task_extra_fields",
-          "test_setup": {
-            "given": {
-              "request_body_json": {
-                "Description": "Extra field present",
-                "Due_date": "2024-07-28",
-                "Irrelevant": "ignore_me",
-                "Location": "Ames",
-                "Priority": "High",
-                "Title": "With extra",
-                "User_name": "frank"
+                "error": "One or more required fields are empty"
               }
             },
-            "then": {
-              "response_body_json": {
-                "Description": "Extra field present",
-                "Due_date": "2024-07-28",
-                "Location": "Ames",
-                "Priority": "High",
-                "Title": "With extra",
-                "User_name": "frank",
-                "id": "generated_task_id"
-              },
-              "response_status": 201
-            },
-            "when": "TaskService.create_task is called with the above data"
+            "when": "TaskService.create_task is called with the provided data"
           },
           "type": "edge"
         },
         {
-          "description": "Create a task with a Title at the maximum allowed length (assuming 255 chars).",
-          "id": "TC013_create_task_boundary_title_length",
+          "description": "Test task creation with location 'ames' (lowercase) to ensure only 'Ames' or 'Boone' are accepted.",
+          "id": "TC11_create_task_location_case_sensitivity",
           "implementation_id": "task_service_create_task_function",
-          "name": "create_task_boundary_title_length",
+          "name": "Reject task creation with location case sensitivity",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Boundary test for title length",
-                "Due_date": "2024-07-30",
-                "Location": "Boone",
+                "Description": "Location case sensitivity",
+                "Due_date": "2024-07-15",
+                "Location": "ames",
                 "Priority": "Medium",
-                "Title": "T.repeat(255)",
-                "User_name": "gina"
+                "Title": "Case Test",
+                "User_name": "casey"
               }
             },
             "then": {
               "response_body_json": {
-                "Description": "Boundary test for title length",
-                "Due_date": "2024-07-30",
-                "Location": "Boone",
-                "Priority": "Medium",
-                "Title": "T.repeat(255)",
-                "User_name": "gina",
-                "id": "generated_task_id"
-              },
-              "response_status": 201
+                "error": "Invalid location. Only 'Ames' or 'Boone' are allowed."
+              }
             },
-            "when": "TaskService.create_task is called with the above data"
+            "when": "TaskService.create_task is called with the provided data"
           },
           "type": "edge"
         },
         {
-          "description": "Attempt to create a task with invalid date format for Due_date should fail.",
-          "id": "TC014_create_task_invalid_due_date_format",
+          "description": "Test creation of a task with Title at maximum allowed length to verify boundary conditions.",
+          "id": "TC12_create_task_boundary_long_title",
           "implementation_id": "task_service_create_task_function",
-          "name": "create_task_invalid_due_date_format",
+          "name": "Create task with maximum length Title",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Due date is not ISO",
-                "Due_date": "07/31/2024",
+                "Description": "Task with long title",
+                "Due_date": "2024-07-20",
                 "Location": "Ames",
                 "Priority": "High",
-                "Title": "Invalid date",
-                "User_name": "henry"
+                "Title": "T.repeat(255)",
+                "User_name": "longtitle"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Invalid date format for Due_date. Expected YYYY-MM-DD."
-              },
-              "response_status": 400
+                "message": "Task created successfully",
+                "task": {
+                  "Description": "Task with long title",
+                  "Due_date": "2024-07-20",
+                  "Location": "Ames",
+                  "Priority": "High",
+                  "Title": "T.repeat(255)",
+                  "User_name": "longtitle"
+                }
+              }
             },
-            "when": "TaskService.create_task is called with the above data"
+            "when": "TaskService.create_task is called with the provided data"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Test task creation with extra, unrecognized fields in the payload.",
+          "id": "TC13_create_task_malformed_payload_extra_fields",
+          "implementation_id": "task_service_create_task_function",
+          "name": "Reject task creation with extra fields in payload",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "Description": "Has extra fields",
+                "Due_date": "2024-08-01",
+                "ExtraField": "Should be ignored",
+                "Location": "Boone",
+                "Priority": "Low",
+                "Title": "Extra Field Task",
+                "User_name": "extrauser"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "message": "Task created successfully",
+                "task": {
+                  "Description": "Has extra fields",
+                  "Due_date": "2024-08-01",
+                  "Location": "Boone",
+                  "Priority": "Low",
+                  "Title": "Extra Field Task",
+                  "User_name": "extrauser"
+                }
+              }
+            },
+            "when": "TaskService.create_task is called with the provided data"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Test task creation with malformed, non-JSON payload.",
+          "id": "TC14_create_task_malformed_payload_non_json",
+          "implementation_id": "task_service_create_task_function",
+          "name": "Reject task creation with non-JSON payload",
+          "test_setup": {
+            "given": {
+              "request_body_json": "Not a JSON object"
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Malformed request: payload must be valid JSON"
+              }
+            },
+            "when": "TaskService.create_task is called with the provided data"
           },
           "type": "negative"
         },
         {
-          "description": "Create a task with all required fields filled with minimum acceptable non-empty strings.",
-          "id": "TC015_create_task_all_fields_minimum_values",
+          "description": "Test task creation when Due_date is not in valid format (e.g., '20240701').",
+          "id": "TC15_create_task_invalid_due_date_format",
           "implementation_id": "task_service_create_task_function",
-          "name": "create_task_all_fields_minimum_values",
+          "name": "Reject task creation with invalid Due_date format",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "B",
-                "Due_date": "2024-07-01",
+                "Description": "Due date not ISO format",
+                "Due_date": "20240701",
                 "Location": "Ames",
-                "Priority": "Low",
-                "Title": "A",
-                "User_name": "C"
+                "Priority": "Medium",
+                "Title": "Bad Date Format",
+                "User_name": "dateuser"
               }
             },
             "then": {
               "response_body_json": {
-                "Description": "B",
-                "Due_date": "2024-07-01",
-                "Location": "Ames",
-                "Priority": "Low",
-                "Title": "A",
-                "User_name": "C",
-                "id": "generated_task_id"
-              },
-              "response_status": 201
+                "error": "Invalid Due_date format. Expected 'YYYY-MM-DD'."
+              }
             },
-            "when": "TaskService.create_task is called with the above data"
+            "when": "TaskService.create_task is called with the provided data"
           },
           "type": "edge"
         }
-      ],
-      "test_path": ".codevalid/tests/task_6318203745_20240611140000/task_service_create_task_function.py"
+      ]
     },
     {
       "implementation_id": "task_repository_add_task_function",
       "test_cases": [
         {
-          "description": "Successfully add a task with all required attributes and location 'Ames'.",
-          "id": "TC_ADD_TASK_SUCCESS_AMES",
+          "description": "Verify that a task with all required fields and a valid location 'Ames' is successfully created.",
+          "id": "add_task_success_ames",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_success_location_ames",
+          "name": "Add Task with All Valid Fields (Location: Ames)",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Finish and submit the final report",
-                "Due_date": "2024-07-10",
-                "Location": "Ames",
-                "Priority": "High",
-                "Title": "Complete project report",
-                "User_name": "john_doe"
+                "description": "Complete the annual report for 2024.",
+                "due_date": "2024-07-01",
+                "location": "Ames",
+                "priority": "High",
+                "title": "Finish report",
+                "user_name": "alice"
               }
             },
             "then": {
               "response_body_json": {
-                "Description": "Finish and submit the final report",
-                "Due_date": "2024-07-10",
-                "Location": "Ames",
-                "Priority": "High",
-                "Title": "Complete project report",
-                "User_name": "john_doe",
-                "id": "auto_generated_id"
-              },
-              "response_status": 201
+                "success": true,
+                "task": {
+                  "description": "Complete the annual report for 2024.",
+                  "due_date": "2024-07-01",
+                  "id": "auto-generated unique integer",
+                  "location": "Ames",
+                  "priority": "High",
+                  "title": "Finish report",
+                  "user_name": "alice"
+                }
+              }
             },
-            "when": "TaskRepository.add_task is called with the provided data."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "positive"
         },
         {
-          "description": "Successfully add a task with all required attributes and location 'Boone'.",
-          "id": "TC_ADD_TASK_SUCCESS_BOONE",
+          "description": "Verify that a task with all required fields and a valid location 'Boone' is successfully created.",
+          "id": "add_task_success_boone",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_success_location_boone",
+          "name": "Add Task with All Valid Fields (Location: Boone)",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Discuss project status",
-                "Due_date": "2024-07-15",
-                "Location": "Boone",
-                "Priority": "Medium",
-                "Title": "Team meeting",
-                "User_name": "jane_smith"
+                "description": "Slides for product launch.",
+                "due_date": "2024-06-20",
+                "location": "Boone",
+                "priority": "Medium",
+                "title": "Prepare slides",
+                "user_name": "bob"
               }
             },
             "then": {
               "response_body_json": {
-                "Description": "Discuss project status",
-                "Due_date": "2024-07-15",
-                "Location": "Boone",
-                "Priority": "Medium",
-                "Title": "Team meeting",
-                "User_name": "jane_smith",
-                "id": "auto_generated_id"
-              },
-              "response_status": 201
+                "success": true,
+                "task": {
+                  "description": "Slides for product launch.",
+                  "due_date": "2024-06-20",
+                  "id": "auto-generated unique integer",
+                  "location": "Boone",
+                  "priority": "Medium",
+                  "title": "Prepare slides",
+                  "user_name": "bob"
+                }
+              }
             },
-            "when": "TaskRepository.add_task is called with the provided data."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "positive"
         },
         {
-          "description": "Fail to add a task when the 'Title' attribute is missing.",
-          "id": "TC_ADD_TASK_MISSING_TITLE",
+          "description": "Verify that a task is not created if the location is not 'Ames' or 'Boone', and an appropriate error message is returned.",
+          "id": "add_task_invalid_location",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_missing_title",
+          "name": "Reject Task with Invalid Location",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "No title provided",
-                "Due_date": "2024-08-01",
-                "Location": "Ames",
-                "Priority": "Low",
-                "User_name": "alex_lee"
+                "description": "Update API documentation.",
+                "due_date": "2024-06-25",
+                "location": "Des Moines",
+                "priority": "Low",
+                "title": "Update docs",
+                "user_name": "carol"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Missing required attribute: Title"
-              },
-              "response_status": 400
+                "error": "Invalid location. Allowed values are 'Ames' or 'Boone'.",
+                "success": false
+              }
             },
-            "when": "TaskRepository.add_task is called with missing 'Title'."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "negative"
         },
         {
-          "description": "Fail to add a task when the 'Description' attribute is missing.",
-          "id": "TC_ADD_TASK_MISSING_DESCRIPTION",
+          "description": "Verify that a task submission missing the 'title' field is rejected with an error message.",
+          "id": "add_task_missing_title",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_missing_description",
+          "name": "Reject Task with Missing Title",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Due_date": "2024-08-01",
-                "Location": "Ames",
-                "Priority": "Low",
-                "Title": "Task without description",
-                "User_name": "alex_lee"
+                "description": "No title provided.",
+                "due_date": "2024-07-10",
+                "location": "Ames",
+                "priority": "High",
+                "user_name": "dave"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Missing required attribute: Description"
-              },
-              "response_status": 400
+                "error": "Missing required field: title.",
+                "success": false
+              }
             },
-            "when": "TaskRepository.add_task is called with missing 'Description'."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "negative"
         },
         {
-          "description": "Fail to add a task when the 'Priority' attribute is missing.",
-          "id": "TC_ADD_TASK_MISSING_PRIORITY",
+          "description": "Verify that a task submission missing the 'description' field is rejected with an error message.",
+          "id": "add_task_missing_description",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_missing_priority",
+          "name": "Reject Task with Missing Description",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Priority not specified",
-                "Due_date": "2024-08-01",
-                "Location": "Ames",
-                "Title": "Task without priority",
-                "User_name": "alex_lee"
+                "due_date": "2024-07-15",
+                "location": "Boone",
+                "priority": "Low",
+                "title": "Task without description",
+                "user_name": "eve"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Missing required attribute: Priority"
-              },
-              "response_status": 400
+                "error": "Missing required field: description.",
+                "success": false
+              }
             },
-            "when": "TaskRepository.add_task is called with missing 'Priority'."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "negative"
         },
         {
-          "description": "Fail to add a task when the 'Due_date' attribute is missing.",
-          "id": "TC_ADD_TASK_MISSING_DUE_DATE",
+          "description": "Verify that a task submission missing the 'priority' field is rejected with an error message.",
+          "id": "add_task_missing_priority",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_missing_due_date",
+          "name": "Reject Task with Missing Priority",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Due date not specified",
-                "Location": "Ames",
-                "Priority": "Medium",
-                "Title": "Task without due date",
-                "User_name": "alex_lee"
+                "description": "Priority field missing.",
+                "due_date": "2024-07-20",
+                "location": "Ames",
+                "title": "No priority",
+                "user_name": "frank"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Missing required attribute: Due_date"
-              },
-              "response_status": 400
+                "error": "Missing required field: priority.",
+                "success": false
+              }
             },
-            "when": "TaskRepository.add_task is called with missing 'Due_date'."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "negative"
         },
         {
-          "description": "Fail to add a task when the 'User_name' attribute is missing.",
-          "id": "TC_ADD_TASK_MISSING_USER_NAME",
+          "description": "Verify that a task submission missing the 'due_date' field is rejected with an error message.",
+          "id": "add_task_missing_due_date",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_missing_user_name",
+          "name": "Reject Task with Missing Due Date",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "User name not specified",
-                "Due_date": "2024-08-01",
-                "Location": "Ames",
-                "Priority": "Medium",
-                "Title": "Task without user name"
+                "description": "Due date missing.",
+                "location": "Boone",
+                "priority": "Medium",
+                "title": "No due date",
+                "user_name": "grace"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Missing required attribute: User_name"
-              },
-              "response_status": 400
+                "error": "Missing required field: due_date.",
+                "success": false
+              }
             },
-            "when": "TaskRepository.add_task is called with missing 'User_name'."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "negative"
         },
         {
-          "description": "Fail to add a task when the 'Location' attribute is missing.",
-          "id": "TC_ADD_TASK_MISSING_LOCATION",
+          "description": "Verify that a task submission missing the 'user_name' field is rejected with an error message.",
+          "id": "add_task_missing_user_name",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_missing_location",
+          "name": "Reject Task with Missing User Name",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Location not specified",
-                "Due_date": "2024-08-01",
-                "Priority": "Medium",
-                "Title": "Task without location",
-                "User_name": "alex_lee"
+                "description": "User name missing.",
+                "due_date": "2024-07-25",
+                "location": "Ames",
+                "priority": "Low",
+                "title": "No user name"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Missing required attribute: Location"
-              },
-              "response_status": 400
+                "error": "Missing required field: user_name.",
+                "success": false
+              }
             },
-            "when": "TaskRepository.add_task is called with missing 'Location'."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "negative"
         },
         {
-          "description": "Fail to add a task when the location is not 'Ames' or 'Boone' (using 'Des Moines').",
-          "id": "TC_ADD_TASK_INVALID_LOCATION_DES_MOINES",
+          "description": "Verify that a task submission missing the 'location' field is rejected with an error message.",
+          "id": "add_task_missing_location",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_invalid_location_des_moines",
+          "name": "Reject Task with Missing Location",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Location is Des Moines",
-                "Due_date": "2024-07-20",
-                "Location": "Des Moines",
-                "Priority": "High",
-                "Title": "Invalid location task",
-                "User_name": "test_user"
+                "description": "Location missing.",
+                "due_date": "2024-07-30",
+                "priority": "High",
+                "title": "No location",
+                "user_name": "helen"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Invalid location: must be 'Ames' or 'Boone'"
-              },
-              "response_status": 400
+                "error": "Missing required field: location.",
+                "success": false
+              }
             },
-            "when": "TaskRepository.add_task is called with invalid location."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "negative"
         },
         {
-          "description": "Fail to add a task when the location is 'ames' (lowercase), testing case sensitivity.",
-          "id": "TC_ADD_TASK_INVALID_LOCATION_CASE",
+          "description": "Verify that a task submission with all fields present but as empty strings is rejected for missing required field values.",
+          "id": "add_task_all_fields_empty_strings",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_invalid_location_case",
+          "name": "Reject Task with All Fields as Empty Strings",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Location is lowercase 'ames'",
-                "Due_date": "2024-07-25",
-                "Location": "ames",
-                "Priority": "Low",
-                "Title": "Case sensitive location",
-                "User_name": "case_test"
+                "description": "",
+                "due_date": "",
+                "location": "",
+                "priority": "",
+                "title": "",
+                "user_name": ""
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Invalid location: must be 'Ames' or 'Boone'"
-              },
-              "response_status": 400
+                "error": "Missing required field values.",
+                "success": false
+              }
             },
-            "when": "TaskRepository.add_task is called with lowercase location."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "edge"
         },
         {
-          "description": "Fail to add a task when the location is an empty string.",
-          "id": "TC_ADD_TASK_INVALID_LOCATION_EMPTY_STRING",
+          "description": "Verify that a task with minimal non-empty values for all required fields is accepted.",
+          "id": "add_task_minimal_valid_fields",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_invalid_location_empty_string",
+          "name": "Add Task with Minimal Valid Field Lengths",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Location is empty",
-                "Due_date": "2024-07-30",
-                "Location": "",
-                "Priority": "Low",
-                "Title": "Empty location",
-                "User_name": "empty_loc"
+                "description": "B",
+                "due_date": "2024-08-01",
+                "location": "Ames",
+                "priority": "Low",
+                "title": "A",
+                "user_name": "c"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Invalid location: must be 'Ames' or 'Boone'"
-              },
-              "response_status": 400
+                "success": true,
+                "task": {
+                  "description": "B",
+                  "due_date": "2024-08-01",
+                  "id": "auto-generated unique integer",
+                  "location": "Ames",
+                  "priority": "Low",
+                  "title": "A",
+                  "user_name": "c"
+                }
+              }
             },
-            "when": "TaskRepository.add_task is called with empty location."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "edge"
         },
         {
-          "description": "Successfully add a task when all string fields are at their maximum allowed length (e.g., 255 characters).",
-          "id": "TC_ADD_TASK_ALL_FIELDS_MAX_LENGTH",
+          "description": "Verify that extra, non-required fields in the payload are ignored and do not affect task creation.",
+          "id": "add_task_extra_fields_ignored",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_all_fields_max_length",
+          "name": "Add Task with Extra Fields in Payload",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "D.repeat(255)",
-                "Due_date": "2024-07-31",
-                "Location": "Ames",
-                "Priority": "P.repeat(255)",
-                "Title": "T.repeat(255)",
-                "User_name": "U.repeat(255)"
+                "description": "Payload includes extra fields.",
+                "due_date": "2024-08-02",
+                "foo": 123,
+                "location": "Boone",
+                "priority": "High",
+                "title": "With extras",
+                "unexpected": "should be ignored",
+                "user_name": "jill"
               }
             },
             "then": {
               "response_body_json": {
-                "Description": "D.repeat(255)",
-                "Due_date": "2024-07-31",
-                "Location": "Ames",
-                "Priority": "P.repeat(255)",
-                "Title": "T.repeat(255)",
-                "User_name": "U.repeat(255)",
-                "id": "auto_generated_id"
-              },
-              "response_status": 201
+                "success": true,
+                "task": {
+                  "description": "Payload includes extra fields.",
+                  "due_date": "2024-08-02",
+                  "id": "auto-generated unique integer",
+                  "location": "Boone",
+                  "priority": "High",
+                  "title": "With extras",
+                  "user_name": "jill"
+                }
+              }
             },
-            "when": "TaskRepository.add_task is called with max length fields."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "edge"
         },
         {
-          "description": "Successfully add tasks with duplicate titles; repository does not enforce uniqueness on title.",
-          "id": "TC_ADD_TASK_DUPLICATE_TITLE",
+          "description": "Verify that a malformed/incomplete JSON payload is rejected with a clear error message.",
+          "id": "add_task_invalid_json_payload",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_duplicate_title",
+          "name": "Reject Task with Invalid JSON Payload",
           "test_setup": {
             "given": {
-              "request_body_json": {
-                "Description": "First task with duplicate title",
-                "Due_date": "2024-08-05",
-                "Location": "Boone",
-                "Priority": "Medium",
-                "Title": "Duplicate Title",
-                "User_name": "user1"
+              "request_body_json": "malformed JSON: {title: 'Incomplete}"
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Invalid JSON payload.",
+                "success": false
+              }
+            },
+            "when": "TaskRepository.add_task is called with the provided input."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Verify that two tasks with identical attributes (except for ID) can be added separately.",
+          "id": "add_task_duplicate_task_allowed",
+          "implementation_id": "task_repository_add_task_function",
+          "name": "Allow Duplicate Task Attributes",
+          "test_setup": {
+            "given": {
+              "request_body_json_1": {
+                "description": "Same details.",
+                "due_date": "2024-08-10",
+                "location": "Ames",
+                "priority": "High",
+                "title": "Duplicate",
+                "user_name": "kim"
               },
-              "second_request_body_json": {
-                "Description": "Second task with duplicate title",
-                "Due_date": "2024-08-06",
-                "Location": "Ames",
-                "Priority": "High",
-                "Title": "Duplicate Title",
-                "User_name": "user2"
+              "request_body_json_2": {
+                "description": "Same details.",
+                "due_date": "2024-08-10",
+                "location": "Ames",
+                "priority": "High",
+                "title": "Duplicate",
+                "user_name": "kim"
               }
             },
             "then": {
-              "response_body_json_first": {
-                "Description": "First task with duplicate title",
-                "Due_date": "2024-08-05",
-                "Location": "Boone",
-                "Priority": "Medium",
-                "Title": "Duplicate Title",
-                "User_name": "user1",
-                "id": "auto_generated_id_1"
+              "response_body_json_1": {
+                "success": true,
+                "task": {
+                  "description": "Same details.",
+                  "due_date": "2024-08-10",
+                  "id": "auto-generated unique integer (e.g., 1)",
+                  "location": "Ames",
+                  "priority": "High",
+                  "title": "Duplicate",
+                  "user_name": "kim"
+                }
               },
-              "response_body_json_second": {
-                "Description": "Second task with duplicate title",
-                "Due_date": "2024-08-06",
-                "Location": "Ames",
-                "Priority": "High",
-                "Title": "Duplicate Title",
-                "User_name": "user2",
-                "id": "auto_generated_id_2"
-              },
-              "response_status": 201
+              "response_body_json_2": {
+                "success": true,
+                "task": {
+                  "description": "Same details.",
+                  "due_date": "2024-08-10",
+                  "id": "auto-generated unique integer (e.g., 2)",
+                  "location": "Ames",
+                  "priority": "High",
+                  "title": "Duplicate",
+                  "user_name": "kim"
+                }
+              }
             },
-            "when": "TaskRepository.add_task is called twice with the same title and different other attributes."
+            "when": "TaskRepository.add_task is called twice with the same input data."
           },
           "type": "edge"
         },
         {
-          "description": "Fail to add a task when the due date is not in valid format (e.g., '31-07-2024').",
-          "id": "TC_ADD_TASK_INVALID_DUE_DATE_FORMAT",
+          "description": "Verify that location values are case sensitive and values like 'ames' or 'boone' are rejected.",
+          "id": "add_task_case_sensitive_location",
           "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_invalid_due_date_format",
+          "name": "Reject Task with Incorrect Location Case",
           "test_setup": {
             "given": {
               "request_body_json": {
-                "Description": "Date format not ISO",
-                "Due_date": "31-07-2024",
-                "Location": "Ames",
-                "Priority": "High",
-                "Title": "Invalid Due Date",
-                "User_name": "user3"
+                "description": "Test location case sensitivity.",
+                "due_date": "2024-08-05",
+                "location": "ames",
+                "priority": "Medium",
+                "title": "Case test",
+                "user_name": "li"
               }
             },
             "then": {
               "response_body_json": {
-                "error": "Invalid due date format. Expected YYYY-MM-DD."
-              },
-              "response_status": 400
-            },
-            "when": "TaskRepository.add_task is called with invalid due date format."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Verify that task IDs are automatically incremented with each new task.",
-          "id": "TC_ADD_TASK_ID_AUTO_INCREMENT",
-          "implementation_id": "task_repository_add_task_function",
-          "name": "add_task_id_auto_increment",
-          "test_setup": {
-            "given": {
-              "first_task": {
-                "Description": "First task",
-                "Due_date": "2024-08-10",
-                "Location": "Ames",
-                "Priority": "Low",
-                "Title": "Task 1",
-                "User_name": "user1"
-              },
-              "second_task": {
-                "Description": "Second task",
-                "Due_date": "2024-08-11",
-                "Location": "Boone",
-                "Priority": "Medium",
-                "Title": "Task 2",
-                "User_name": "user2"
+                "error": "Invalid location. Allowed values are 'Ames' or 'Boone'.",
+                "success": false
               }
             },
-            "then": {
-              "response_body_json_first": {
-                "Description": "First task",
-                "Due_date": "2024-08-10",
-                "Location": "Ames",
-                "Priority": "Low",
-                "Title": "Task 1",
-                "User_name": "user1",
-                "id": "auto_generated_id_1"
-              },
-              "response_body_json_second": {
-                "Description": "Second task",
-                "Due_date": "2024-08-11",
-                "Location": "Boone",
-                "Priority": "Medium",
-                "Title": "Task 2",
-                "User_name": "user2",
-                "id": "auto_generated_id_2"
-              }
-            },
-            "when": "TaskRepository.add_task is called twice in succession."
+            "when": "TaskRepository.add_task is called with the provided input."
           },
           "type": "edge"
         }
-      ],
-      "test_path": ".codevalid/tests/task_6318203745_20240611140000/task_repository_add_task_function.py"
+      ]
     }
   ],
   "component": [],
@@ -1596,12 +1566,12 @@
       "implementation_id": "main_include_task_router",
       "test_cases": [
         {
-          "description": "Verify that a task is successfully created when all required attributes are provided and Location is 'Ames'.",
-          "id": "tc_001_create_task_valid_ames",
+          "description": "Verify that a task can be created with all required fields and Location set to 'Ames'.",
+          "id": "TC01_create_task_valid_location_ames",
           "implementation_id": "main_include_task_router",
-          "name": "Create a task with valid attributes and Location 'Ames'",
+          "name": "Create Task with valid Location 'Ames'",
           "request_body_json": {
-            "Description": "Purchase milk, eggs, and bread",
+            "Description": "Purchase vegetables and fruits",
             "Due_date": "2024-06-15",
             "Location": "Ames",
             "Priority": "High",
@@ -1614,33 +1584,27 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "Description": "Purchase milk, eggs, and bread",
-            "Due_date": "2024-06-15",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "Buy groceries",
-            "User_name": "alice",
-            "id": "task_id_generated"
+            "message": "Task added successfully"
           },
           "response_status_code": 201,
           "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "Task is created and returned with 201 status.",
-            "when": "A valid POST request with Location 'Ames' is sent."
+            "given": "API is running and no pre-existing task with this payload.",
+            "then": "Task is created, 201 status returned, and confirmation message is received.",
+            "when": "POST request with all valid fields and Location as 'Ames' is sent."
           },
           "type": "positive"
         },
         {
-          "description": "Verify that a task is successfully created when all required attributes are provided and Location is 'Boone'.",
-          "id": "tc_002_create_task_valid_boone",
+          "description": "Verify that a task can be created with all required fields and Location set to 'Boone'.",
+          "id": "TC02_create_task_valid_location_boone",
           "implementation_id": "main_include_task_router",
-          "name": "Create a task with valid attributes and Location 'Boone'",
+          "name": "Create Task with valid Location 'Boone'",
           "request_body_json": {
-            "Description": "Fix the kitchen faucet",
+            "Description": "Write up the quarterly report",
             "Due_date": "2024-06-20",
             "Location": "Boone",
             "Priority": "Medium",
-            "Title": "Call plumber",
+            "Title": "Finish report",
             "User_name": "bob"
           },
           "request_headers": {
@@ -1649,32 +1613,27 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "Description": "Fix the kitchen faucet",
-            "Due_date": "2024-06-20",
-            "Location": "Boone",
-            "Priority": "Medium",
-            "Title": "Call plumber",
-            "User_name": "bob",
-            "id": "task_id_generated"
+            "message": "Task added successfully"
           },
           "response_status_code": 201,
           "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "Task is created and returned with 201 status.",
-            "when": "A valid POST request with Location 'Boone' is sent."
+            "given": "API is running and no pre-existing task with this payload.",
+            "then": "Task is created, 201 status returned, and confirmation message is received.",
+            "when": "POST request with all valid fields and Location as 'Boone' is sent."
           },
           "type": "positive"
         },
         {
-          "description": "Verify that the endpoint returns an error when Title is missing from the request body.",
-          "id": "tc_003_missing_title",
+          "description": "Verify that creating a task with Location other than 'Ames' or 'Boone' returns a 400 error.",
+          "id": "TC03_create_task_invalid_location",
           "implementation_id": "main_include_task_router",
-          "name": "Missing Title attribute",
+          "name": "Create Task with invalid Location",
           "request_body_json": {
-            "Description": "Go for a walk",
-            "Due_date": "2024-06-17",
-            "Location": "Ames",
+            "Description": "Get new supplies",
+            "Due_date": "2024-06-10",
+            "Location": "Des Moines",
             "Priority": "Low",
+            "Title": "Call supplier",
             "User_name": "charlie"
           },
           "request_headers": {
@@ -1683,27 +1642,27 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "error": "Missing required attribute: Title"
+            "error": "Invalid location. Must be 'Ames' or 'Boone'."
           },
           "response_status_code": 400,
           "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent without Title."
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error and relevant error message.",
+            "when": "POST request with Location set to 'Des Moines' is sent."
           },
           "type": "negative"
         },
         {
-          "description": "Verify that the endpoint returns an error when Description is missing.",
-          "id": "tc_004_missing_description",
+          "description": "Verify that a request missing the Title field returns a 400 error.",
+          "id": "TC04_create_task_missing_title",
           "implementation_id": "main_include_task_router",
-          "name": "Missing Description attribute",
+          "name": "Create Task with missing Title field",
           "request_body_json": {
-            "Due_date": "2024-06-18",
-            "Location": "Boone",
-            "Priority": "Low",
-            "Title": "Read book",
-            "User_name": "diana"
+            "Description": "Set up meeting",
+            "Due_date": "2024-06-12",
+            "Location": "Ames",
+            "Priority": "High",
+            "User_name": "david"
           },
           "request_headers": {
             "Content-Type": "application/json"
@@ -1711,26 +1670,26 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "error": "Missing required attribute: Description"
+            "error": "Missing required field: Title"
           },
           "response_status_code": 400,
           "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent without Description."
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error and relevant error message.",
+            "when": "POST request missing the Title field is sent."
           },
           "type": "negative"
         },
         {
-          "description": "Verify that the endpoint returns an error when Priority is missing.",
-          "id": "tc_005_missing_priority",
+          "description": "Verify that a request missing the Description field returns a 400 error.",
+          "id": "TC05_create_task_missing_description",
           "implementation_id": "main_include_task_router",
-          "name": "Missing Priority attribute",
+          "name": "Create Task with missing Description field",
           "request_body_json": {
-            "Description": "Organize and clean garage",
-            "Due_date": "2024-06-21",
-            "Location": "Ames",
-            "Title": "Clean garage",
+            "Due_date": "2024-06-22",
+            "Location": "Boone",
+            "Priority": "Medium",
+            "Title": "Review code",
             "User_name": "eve"
           },
           "request_headers": {
@@ -1739,26 +1698,26 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "error": "Missing required attribute: Priority"
+            "error": "Missing required field: Description"
           },
           "response_status_code": 400,
           "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent without Priority."
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error and relevant error message.",
+            "when": "POST request missing the Description field is sent."
           },
           "type": "negative"
         },
         {
-          "description": "Verify that the endpoint returns an error when Due_date is missing.",
-          "id": "tc_006_missing_due_date",
+          "description": "Verify that a request missing the Priority field returns a 400 error.",
+          "id": "TC06_create_task_missing_priority",
           "implementation_id": "main_include_task_router",
-          "name": "Missing Due_date attribute",
+          "name": "Create Task with missing Priority field",
           "request_body_json": {
-            "Description": "Finish and submit monthly report",
-            "Location": "Boone",
-            "Priority": "High",
-            "Title": "Submit report",
+            "Description": "Setup for annual event",
+            "Due_date": "2024-06-25",
+            "Location": "Ames",
+            "Title": "Plan event",
             "User_name": "frank"
           },
           "request_headers": {
@@ -1767,171 +1726,27 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "error": "Missing required attribute: Due_date"
+            "error": "Missing required field: Priority"
           },
           "response_status_code": 400,
           "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent without Due_date."
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error and relevant error message.",
+            "when": "POST request missing the Priority field is sent."
           },
           "type": "negative"
         },
         {
-          "description": "Verify that the endpoint returns an error when User_name is missing.",
-          "id": "tc_007_missing_user_name",
+          "description": "Verify that a request missing the Due_date field returns a 400 error.",
+          "id": "TC07_create_task_missing_due_date",
           "implementation_id": "main_include_task_router",
-          "name": "Missing User_name attribute",
+          "name": "Create Task with missing Due_date field",
           "request_body_json": {
-            "Description": "Pay electricity and water bills",
-            "Due_date": "2024-06-22",
-            "Location": "Ames",
-            "Priority": "Medium",
-            "Title": "Pay bills"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Missing required attribute: User_name"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent without User_name."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Verify that the endpoint returns an error when Location is missing.",
-          "id": "tc_008_missing_location",
-          "implementation_id": "main_include_task_router",
-          "name": "Missing Location attribute",
-          "request_body_json": {
-            "Description": "Project kickoff meeting",
-            "Due_date": "2024-06-23",
-            "Priority": "High",
-            "Title": "Attend meeting",
-            "User_name": "gina"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Missing required attribute: Location"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent without Location."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Verify that the endpoint returns an error when Location is not 'Ames' or 'Boone'.",
-          "id": "tc_009_invalid_location_value",
-          "implementation_id": "main_include_task_router",
-          "name": "Invalid Location value",
-          "request_body_json": {
-            "Description": "Clean both inside and outside",
-            "Due_date": "2024-06-24",
-            "Location": "Des Moines",
-            "Priority": "Low",
-            "Title": "Wash car",
-            "User_name": "henry"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Invalid Location: must be 'Ames' or 'Boone'"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent with Location 'Des Moines'."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Verify that the endpoint returns an error when Location is 'ames' instead of 'Ames'.",
-          "id": "tc_010_location_case_sensitivity",
-          "implementation_id": "main_include_task_router",
-          "name": "Location with incorrect casing",
-          "request_body_json": {
-            "Description": "Order from favorite shop",
-            "Due_date": "2024-06-25",
-            "Location": "ames",
-            "Priority": "Medium",
-            "Title": "Order pizza",
-            "User_name": "irene"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Invalid Location: must be 'Ames' or 'Boone'"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent with Location 'ames'."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Verify that the endpoint returns an error when Location is 'Ames ' with a trailing space.",
-          "id": "tc_011_location_whitespace",
-          "implementation_id": "main_include_task_router",
-          "name": "Location with leading/trailing whitespace",
-          "request_body_json": {
-            "Description": "Topic: API testing",
-            "Due_date": "2024-06-26",
-            "Location": "Ames ",
-            "Priority": "High",
-            "Title": "Write blog post",
-            "User_name": "jack"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Invalid Location: must be 'Ames' or 'Boone'"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent with Location 'Ames ' (trailing whitespace)."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Verify behavior when Title is an empty string.",
-          "id": "tc_012_empty_title",
-          "implementation_id": "main_include_task_router",
-          "name": "Empty Title value",
-          "request_body_json": {
-            "Description": "Test task with empty title",
-            "Due_date": "2024-06-27",
+            "Description": "Backup important documents",
             "Location": "Boone",
             "Priority": "Low",
-            "Title": "",
-            "User_name": "karen"
+            "Title": "Backup files",
+            "User_name": "grace"
           },
           "request_headers": {
             "Content-Type": "application/json"
@@ -1939,122 +1754,27 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "error": "Title cannot be empty"
+            "error": "Missing required field: Due_date"
           },
           "response_status_code": 400,
           "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent with empty Title."
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error and relevant error message.",
+            "when": "POST request missing the Due_date field is sent."
           },
-          "type": "edge"
+          "type": "negative"
         },
         {
-          "description": "Verify behavior when Description is an empty string.",
-          "id": "tc_013_empty_description",
+          "description": "Verify that a request missing the User_name field returns a 400 error.",
+          "id": "TC08_create_task_missing_user_name",
           "implementation_id": "main_include_task_router",
-          "name": "Empty Description value",
+          "name": "Create Task with missing User_name field",
           "request_body_json": {
-            "Description": "",
-            "Due_date": "2024-06-28",
-            "Location": "Ames",
-            "Priority": "Medium",
-            "Title": "Test empty description",
-            "User_name": "leo"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Description cannot be empty"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent with empty Description."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Verify that the endpoint returns an error when Due_date is not in ISO format.",
-          "id": "tc_014_invalid_due_date_format",
-          "implementation_id": "main_include_task_router",
-          "name": "Invalid Due_date format",
-          "request_body_json": {
-            "Description": "Due date is not ISO",
-            "Due_date": "15-06-2024",
-            "Location": "Boone",
-            "Priority": "High",
-            "Title": "Test invalid due date",
-            "User_name": "maya"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Invalid Due_date format. Expected YYYY-MM-DD"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent with Due_date in wrong format."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Verify that extra attributes in the request body are ignored or cause an error depending on implementation.",
-          "id": "tc_015_extra_attributes",
-          "implementation_id": "main_include_task_router",
-          "name": "Request body contains extra attribute",
-          "request_body_json": {
-            "Description": "Has extra field",
-            "Due_date": "2024-06-29",
-            "Extra": "should not be here",
-            "Location": "Ames",
-            "Priority": "Low",
-            "Title": "Extra attribute test",
-            "User_name": "nina"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "Description": "Has extra field",
-            "Due_date": "2024-06-29",
-            "Location": "Ames",
-            "Priority": "Low",
-            "Title": "Extra attribute test",
-            "User_name": "nina",
-            "id": "task_id_generated"
-          },
-          "response_status_code": 201,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "Extra attribute is ignored and task is created, or error is returned.",
-            "when": "POST request is sent with extra attribute."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Verify that the endpoint handles all string fields at their maximum allowed length (assume 255).",
-          "id": "tc_016_all_fields_max_length",
-          "implementation_id": "main_include_task_router",
-          "name": "All fields at maximum length",
-          "request_body_json": {
-            "Description": "D.repeat(255)",
+            "Description": "Organize team lunch event",
             "Due_date": "2024-06-30",
             "Location": "Ames",
-            "Priority": "P.repeat(255)",
-            "Title": "T.repeat(255)",
-            "User_name": "U.repeat(255)"
+            "Priority": "Medium",
+            "Title": "Team lunch"
           },
           "request_headers": {
             "Content-Type": "application/json"
@@ -2062,63 +1782,57 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "Description": "D.repeat(255)",
-            "Due_date": "2024-06-30",
-            "Location": "Ames",
-            "Priority": "P.repeat(255)",
-            "Title": "T.repeat(255)",
-            "User_name": "U.repeat(255)",
-            "id": "task_id_generated"
-          },
-          "response_status_code": 201,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "Task is created successfully if limits are enforced.",
-            "when": "POST request is sent with all fields at max allowed length."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Verify that the endpoint returns an error when Priority is not one of the expected values (e.g. 'High', 'Medium', 'Low').",
-          "id": "tc_017_priority_invalid_value",
-          "implementation_id": "main_include_task_router",
-          "name": "Invalid Priority value",
-          "request_body_json": {
-            "Description": "Priority is 'Urgent'",
-            "Due_date": "2024-07-01",
-            "Location": "Boone",
-            "Priority": "Urgent",
-            "Title": "Invalid priority test",
-            "User_name": "oliver"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Invalid Priority value. Expected 'High', 'Medium', or 'Low'"
+            "error": "Missing required field: User_name"
           },
           "response_status_code": 400,
           "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent with Priority 'Urgent'."
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error and relevant error message.",
+            "when": "POST request missing the User_name field is sent."
           },
-          "type": "edge"
+          "type": "negative"
         },
         {
-          "description": "Verify behavior when User_name is a numeric string.",
-          "id": "tc_018_user_name_numeric",
+          "description": "Verify that a request missing the Location field returns a 400 error.",
+          "id": "TC09_create_task_missing_location",
           "implementation_id": "main_include_task_router",
-          "name": "User_name is numeric string",
+          "name": "Create Task with missing Location field",
           "request_body_json": {
-            "Description": "User_name is numeric string",
-            "Due_date": "2024-07-02",
-            "Location": "Ames",
+            "Description": "Add new features to website",
+            "Due_date": "2024-07-01",
+            "Priority": "High",
+            "Title": "Update website",
+            "User_name": "heidi"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Missing required field: Location"
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error and relevant error message.",
+            "when": "POST request missing the Location field is sent."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Verify that a request with an extra field is accepted as long as all required fields are present and valid.",
+          "id": "TC10_create_task_extra_field",
+          "implementation_id": "main_include_task_router",
+          "name": "Create Task with extra field in request",
+          "request_body_json": {
+            "Description": "Organize and clean office space",
+            "Due_date": "2024-07-05",
+            "Extra": "Should be ignored",
+            "Location": "Boone",
             "Priority": "Low",
-            "Title": "Numeric username test",
-            "User_name": "123456"
+            "Title": "Clean office",
+            "User_name": "ivan"
           },
           "request_headers": {
             "Content-Type": "application/json"
@@ -2126,531 +1840,27 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "Description": "User_name is numeric string",
-            "Due_date": "2024-07-02",
-            "Location": "Ames",
-            "Priority": "Low",
-            "Title": "Numeric username test",
-            "User_name": "123456",
-            "id": "task_id_generated"
+            "message": "Task added successfully"
           },
           "response_status_code": 201,
           "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "Task is created if no restrictions on User_name format.",
-            "when": "POST request is sent with numeric User_name."
+            "given": "API is running.",
+            "then": "Task is created successfully, extra field is ignored, 201 status returned.",
+            "when": "POST request with all required fields and an extra field is sent."
           },
           "type": "edge"
         },
         {
-          "description": "Verify that the endpoint returns an error when Content-Type header is not application/json.",
-          "id": "tc_019_post_invalid_content_type",
+          "description": "Verify that a request with empty strings for required fields should be rejected and return a 400 error.",
+          "id": "TC11_create_task_empty_strings",
           "implementation_id": "main_include_task_router",
-          "name": "POST with invalid Content-Type header",
-          "request_body_json": {
-            "Description": "Content-Type is not application/json",
-            "Due_date": "2024-07-03",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "Invalid content type",
-            "User_name": "paul"
-          },
-          "request_headers": {
-            "Content-Type": "text/plain"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Content-Type must be application/json"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent with Content-Type not application/json."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Verify that the endpoint returns an error when the request body is empty.",
-          "id": "tc_020_post_empty_body",
-          "implementation_id": "main_include_task_router",
-          "name": "POST with empty request body",
-          "request_body_json": {},
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Missing required attributes"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "The /tasks endpoint is available.",
-            "then": "400 error with descriptive message is returned.",
-            "when": "POST request is sent with empty body."
-          },
-          "type": "negative"
-        }
-      ],
-      "test_path": ".codevalid/tests/task_6318203745_20240611140000/main_include_task_router.py"
-    },
-    {
-      "implementation_id": "task_controller_create_task_endpoint",
-      "test_cases": [
-        {
-          "description": "Tests successful creation of a task with all required attributes and Location 'Ames'.",
-          "id": "tc_create_task_valid_ames",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with valid attributes and Location 'Ames'",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice",
-            "id": "generated_id"
-          },
-          "response_status_code": 201,
-          "test_setup": {
-            "given": "All required fields are provided with valid values and Location is 'Ames'.",
-            "then": "Task is created and 201 response with task details is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "positive"
-        },
-        {
-          "description": "Tests successful creation of a task with all required attributes and Location 'Boone'.",
-          "id": "tc_create_task_valid_boone",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with valid attributes and Location 'Boone'",
-          "request_body_json": {
-            "Description": "Prepare presentation",
-            "Due_date": "2024-07-10",
-            "Location": "Boone",
-            "Priority": "Medium",
-            "Title": "Task 2",
-            "User_name": "bob"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "Description": "Prepare presentation",
-            "Due_date": "2024-07-10",
-            "Location": "Boone",
-            "Priority": "Medium",
-            "Title": "Task 2",
-            "User_name": "bob",
-            "id": "generated_id"
-          },
-          "response_status_code": 201,
-          "test_setup": {
-            "given": "All required fields are provided with valid values and Location is 'Boone'.",
-            "then": "Task is created and 201 response with task details is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "positive"
-        },
-        {
-          "description": "Tests error response when Title is missing from the request body.",
-          "id": "tc_create_task_missing_title",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with missing Title attribute",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "Ames",
-            "Priority": "High",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Missing required attribute: Title"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Title is omitted from the request body.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Tests error response when Description is missing from the request body.",
-          "id": "tc_create_task_missing_description",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with missing Description attribute",
-          "request_body_json": {
-            "Due_date": "2024-07-01",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Missing required attribute: Description"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Description is omitted from the request body.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Tests error response when Priority is missing from the request body.",
-          "id": "tc_create_task_missing_priority",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with missing Priority attribute",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "Ames",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Missing required attribute: Priority"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Priority is omitted from the request body.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Tests error response when Due_date is missing from the request body.",
-          "id": "tc_create_task_missing_due_date",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with missing Due_date attribute",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Missing required attribute: Due_date"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Due_date is omitted from the request body.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Tests error response when User_name is missing from the request body.",
-          "id": "tc_create_task_missing_user_name",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with missing User_name attribute",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "Task 1"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Missing required attribute: User_name"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "User_name is omitted from the request body.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Tests error response when Location is missing from the request body.",
-          "id": "tc_create_task_missing_location",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with missing Location attribute",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Missing required attribute: Location"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Location is omitted from the request body.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Tests error response when Location is not 'Ames' or 'Boone'.",
-          "id": "tc_create_task_invalid_location",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with invalid Location value",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "Des Moines",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Invalid Location value: must be 'Ames' or 'Boone'"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Location is set to 'Des Moines', which is not allowed.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Tests error response when Location value is not exactly 'Ames' (case sensitive).",
-          "id": "tc_create_task_location_case_sensitivity",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with Location value 'ames' (case sensitivity)",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "ames",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Invalid Location value: must be 'Ames' or 'Boone'"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Location is set to 'ames' (lowercase).",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Tests error response when Location value is 'BOONE' (all uppercase), which should not be accepted.",
-          "id": "tc_create_task_location_boone_case",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with Location value 'BOONE' (case sensitivity)",
-          "request_body_json": {
-            "Description": "Prepare presentation",
-            "Due_date": "2024-07-10",
-            "Location": "BOONE",
-            "Priority": "Medium",
-            "Title": "Task 2",
-            "User_name": "bob"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Invalid Location value: must be 'Ames' or 'Boone'"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Location is set to 'BOONE' (uppercase).",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "negative"
-        },
-        {
-          "description": "Tests error response when Title is an empty string.",
-          "id": "tc_create_task_empty_string_title",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with empty Title string",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Title cannot be empty"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Title is provided as empty string.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Tests error response when Description is an empty string.",
-          "id": "tc_create_task_empty_string_description",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with empty Description string",
+          "name": "Create Task with empty strings for required fields",
           "request_body_json": {
             "Description": "",
-            "Due_date": "2024-07-01",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Description cannot be empty"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Description is provided as empty string.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Tests error response when Priority is an empty string.",
-          "id": "tc_create_task_empty_string_priority",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with empty Priority string",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "Ames",
-            "Priority": "",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Priority cannot be empty"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Priority is provided as empty string.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Tests error response when Due_date is an empty string.",
-          "id": "tc_create_task_empty_string_due_date",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with empty Due_date string",
-          "request_body_json": {
-            "Description": "Complete the report",
             "Due_date": "",
             "Location": "Ames",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Due_date cannot be empty"
-          },
-          "response_status_code": 400,
-          "test_setup": {
-            "given": "Due_date is provided as empty string.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "edge"
-        },
-        {
-          "description": "Tests error response when User_name is an empty string.",
-          "id": "tc_create_task_empty_string_user_name",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with empty User_name string",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "Task 1",
+            "Priority": "",
+            "Title": "",
             "User_name": ""
           },
           "request_headers": {
@@ -2659,28 +1869,28 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "error": "User_name cannot be empty"
+            "error": "Fields cannot be empty"
           },
           "response_status_code": 400,
           "test_setup": {
-            "given": "User_name is provided as empty string.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error and relevant error message.",
+            "when": "POST request with empty values for required fields is sent."
           },
           "type": "edge"
         },
         {
-          "description": "Tests error response when Location is an empty string.",
-          "id": "tc_create_task_empty_string_location",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with empty Location string",
+          "description": "Verify that Location is case sensitive and 'ames' is rejected.",
+          "id": "TC12_create_task_location_case_sensitive",
+          "implementation_id": "main_include_task_router",
+          "name": "Create Task with 'ames' (lowercase) as Location",
           "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "2024-07-01",
-            "Location": "",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice"
+            "Description": "Order new books for office",
+            "Due_date": "2024-07-10",
+            "Location": "ames",
+            "Priority": "Medium",
+            "Title": "Order books",
+            "User_name": "jane"
           },
           "request_headers": {
             "Content-Type": "application/json"
@@ -2688,57 +1898,180 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "error": "Invalid Location value: must be 'Ames' or 'Boone'"
+            "error": "Invalid location. Must be 'Ames' or 'Boone'."
           },
           "response_status_code": 400,
           "test_setup": {
-            "given": "Location is provided as empty string.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error and relevant error message.",
+            "when": "POST request with Location as 'ames' (lowercase) is sent."
           },
           "type": "edge"
         },
         {
-          "description": "Tests error response when Due_date is not in 'YYYY-MM-DD' format.",
-          "id": "tc_create_task_invalid_due_date_format",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with incorrectly formatted Due_date",
-          "request_body_json": {
-            "Description": "Complete the report",
-            "Due_date": "01-07-2024",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "Task 1",
-            "User_name": "alice"
-          },
+          "description": "Verify that malformed JSON payload returns a 400 error.",
+          "id": "TC13_create_task_invalid_json_payload",
+          "implementation_id": "main_include_task_router",
+          "name": "Create Task with malformed JSON body",
+          "request_body_json": "malformed_json_string_literal",
           "request_headers": {
             "Content-Type": "application/json"
           },
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "error": "Due_date must be in 'YYYY-MM-DD' format"
+            "error": "Malformed JSON payload"
           },
           "response_status_code": 400,
           "test_setup": {
-            "given": "Due_date is provided in incorrect format.",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error indicating malformed JSON.",
+            "when": "POST request with malformed JSON is sent."
           },
-          "type": "edge"
+          "type": "negative"
         },
         {
-          "description": "Tests task creation when extra attributes are included in the request body; extra attributes should be ignored.",
-          "id": "tc_create_task_extra_attributes_ignored",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with extra attributes in request body",
+          "description": "Verify that a request with very long Title and Description is handled correctly (either accepted if within limits or rejected if exceeds limits).",
+          "id": "TC14_create_task_long_strings",
+          "implementation_id": "main_include_task_router",
+          "name": "Create Task with very long strings for Title and Description",
           "request_body_json": {
-            "Description": "Review documents",
+            "Description": "D.repeat(255)",
             "Due_date": "2024-07-15",
-            "ExtraField": "should_be_ignored",
             "Location": "Ames",
+            "Priority": "High",
+            "Title": "T.repeat(255)",
+            "User_name": "kate"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "message": "Task added successfully"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "API is running.",
+            "then": "Task is created successfully if within limits, otherwise rejected with 400 error.",
+            "when": "POST request with very long Title and Description is sent."
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify that a request with an invalid Due_date format returns a 400 error.",
+          "id": "TC15_create_task_invalid_due_date_format",
+          "implementation_id": "main_include_task_router",
+          "name": "Create Task with invalid Due_date format",
+          "request_body_json": {
+            "Description": "Resolve critical bug",
+            "Due_date": "15-07-2024",
+            "Location": "Boone",
+            "Priority": "High",
+            "Title": "Fix bug",
+            "User_name": "leo"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid Due_date format. Expected YYYY-MM-DD."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "API is running.",
+            "then": "Request is rejected with 400 error and relevant error message.",
+            "when": "POST request with invalid Due_date format is sent."
+          },
+          "type": "edge"
+        }
+      ]
+    },
+    {
+      "implementation_id": "task_controller_create_task_endpoint",
+      "test_cases": [
+        {
+          "description": "Verify that a task is created successfully when all required fields are provided and Location is 'Ames'.",
+          "id": "create_task_valid_ames",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Create Task with Valid Payload - Location Ames",
+          "request_body_json": {
+            "Description": "Prepare and submit the final project report.",
+            "Due_date": "2024-07-15",
+            "Location": "Ames",
+            "Priority": "High",
+            "Title": "Complete Project Report",
+            "User_name": "alice"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "Description": "Prepare and submit the final project report.",
+            "Due_date": "2024-07-15",
+            "Location": "Ames",
+            "Priority": "High",
+            "Title": "Complete Project Report",
+            "User_name": "alice"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 201 and returns the created task.",
+            "when": "A POST request is sent with all required fields and Location as 'Ames'."
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Verify that a task is created successfully when all required fields are provided and Location is 'Boone'.",
+          "id": "create_task_valid_boone",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Create Task with Valid Payload - Location Boone",
+          "request_body_json": {
+            "Description": "Schedule and conduct team meeting.",
+            "Due_date": "2024-07-20",
+            "Location": "Boone",
+            "Priority": "Medium",
+            "Title": "Team Meeting",
+            "User_name": "bob"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "Description": "Schedule and conduct team meeting.",
+            "Due_date": "2024-07-20",
+            "Location": "Boone",
+            "Priority": "Medium",
+            "Title": "Team Meeting",
+            "User_name": "bob"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 201 and returns the created task.",
+            "when": "A POST request is sent with all required fields and Location as 'Boone'."
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Verify that a task is not created when the Location is neither 'Ames' nor 'Boone'.",
+          "id": "create_task_invalid_location",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Reject Task Creation with Invalid Location",
+          "request_body_json": {
+            "Description": "Call client for feedback.",
+            "Due_date": "2024-07-22",
+            "Location": "Des Moines",
             "Priority": "Low",
-            "Title": "Task 3",
+            "Title": "Client Call",
             "User_name": "carol"
           },
           "request_headers": {
@@ -2747,63 +2080,27 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "Description": "Review documents",
-            "Due_date": "2024-07-15",
-            "Location": "Ames",
-            "Priority": "Low",
-            "Title": "Task 3",
-            "User_name": "carol",
-            "id": "generated_id"
-          },
-          "response_status_code": 201,
-          "test_setup": {
-            "given": "All required fields are provided and extra attribute is included.",
-            "then": "Task is created, extra attribute is ignored, 201 response with task details is returned.",
-            "when": "POST request is made to /tasks."
-          },
-          "type": "positive"
-        },
-        {
-          "description": "Tests error response when Priority is longer than expected (boundary condition).",
-          "id": "tc_create_task_priority_boundary_long_string",
-          "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with Priority at boundary limit (long string)",
-          "request_body_json": {
-            "Description": "Boundary test",
-            "Due_date": "2024-07-20",
-            "Location": "Boone",
-            "Priority": "A.repeat(256)",
-            "Title": "Task 4",
-            "User_name": "dan"
-          },
-          "request_headers": {
-            "Content-Type": "application/json"
-          },
-          "request_method": "POST",
-          "request_url": "/tasks",
-          "response_body_json": {
-            "error": "Priority value exceeds maximum allowed length"
+            "error": "Invalid location. Location must be either 'Ames' or 'Boone'."
           },
           "response_status_code": 400,
           "test_setup": {
-            "given": "Priority is provided as a string longer than allowed (e.g., 256 characters).",
-            "then": "400 error response with descriptive message is returned.",
-            "when": "POST request is made to /tasks."
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 400 and an appropriate error message.",
+            "when": "A POST request is sent with Location set to 'Des Moines'."
           },
-          "type": "edge"
+          "type": "negative"
         },
         {
-          "description": "Tests successful creation when all fields are at their maximum allowed lengths (edge condition).",
-          "id": "tc_create_task_all_fields_max_length",
+          "description": "Verify that a task is not created when the Title field is missing.",
+          "id": "create_task_missing_title",
           "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with all fields at maximum allowed length",
+          "name": "Reject Task Creation with Missing Title",
           "request_body_json": {
-            "Description": "D.repeat(1024)",
-            "Due_date": "2024-07-31",
+            "Description": "Update documentation.",
+            "Due_date": "2024-07-18",
             "Location": "Ames",
             "Priority": "High",
-            "Title": "T.repeat(255)",
-            "User_name": "U.repeat(128)"
+            "User_name": "dave"
           },
           "request_headers": {
             "Content-Type": "application/json"
@@ -2811,34 +2108,25 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "Description": "D.repeat(1024)",
-            "Due_date": "2024-07-31",
-            "Location": "Ames",
-            "Priority": "High",
-            "Title": "T.repeat(255)",
-            "User_name": "U.repeat(128)",
-            "id": "generated_id"
+            "error": "Missing required field: Title."
           },
-          "response_status_code": 201,
+          "response_status_code": 400,
           "test_setup": {
-            "given": "All fields provided at their maximum allowed lengths.",
-            "then": "Task is created successfully and 201 response is returned.",
-            "when": "POST request is made to /tasks."
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 400 and an error indicating the missing Title.",
+            "when": "A POST request is sent without the Title field."
           },
-          "type": "edge"
+          "type": "negative"
         },
         {
-          "description": "Tests successful creation when all fields are at their minimum allowed lengths (single character).",
-          "id": "tc_create_task_all_fields_min_length",
+          "description": "Verify that a task is not created when multiple required fields are missing.",
+          "id": "create_task_missing_multiple_fields",
           "implementation_id": "task_controller_create_task_endpoint",
-          "name": "Create task with all fields at minimum allowed length",
+          "name": "Reject Task Creation with Multiple Missing Fields",
           "request_body_json": {
-            "Description": "D",
-            "Due_date": "2024-07-01",
             "Location": "Boone",
-            "Priority": "P",
-            "Title": "T",
-            "User_name": "U"
+            "Priority": "Medium",
+            "Title": "Review Budget"
           },
           "request_headers": {
             "Content-Type": "application/json"
@@ -2846,24 +2134,251 @@
           "request_method": "POST",
           "request_url": "/tasks",
           "response_body_json": {
-            "Description": "D",
-            "Due_date": "2024-07-01",
-            "Location": "Boone",
-            "Priority": "P",
-            "Title": "T",
-            "User_name": "U",
-            "id": "generated_id"
+            "error": "Missing required fields: Description, Due_date, User_name."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 400 and an error listing the missing fields.",
+            "when": "A POST request is sent missing Description, Due_date, and User_name."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Verify that a task is not created when the request payload is empty.",
+          "id": "create_task_empty_payload",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Reject Task Creation with Empty Payload",
+          "request_body_json": {},
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Missing required fields: Title, Description, Priority, Due_date, User_name, Location."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 400 and an error listing all missing required fields.",
+            "when": "A POST request is sent with an empty JSON payload."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Verify that the location field is case-sensitive and only accepts 'Ames' or 'Boone' exactly.",
+          "id": "create_task_location_case_sensitivity",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Reject Task Creation with Location Case Mismatch",
+          "request_body_json": {
+            "Description": "Resolve the issue reported by QA.",
+            "Due_date": "2024-07-23",
+            "Location": "ames",
+            "Priority": "High",
+            "Title": "Fix Bug #123",
+            "User_name": "eve"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid location. Location must be either 'Ames' or 'Boone'."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 400 and an error about invalid location.",
+            "when": "A POST request is sent with Location as 'ames' (lowercase)."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Verify that the endpoint returns an error when the request payload is not valid JSON.",
+          "id": "create_task_malformed_json",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Reject Task Creation with Malformed JSON",
+          "request_body_json": "MALFORMED",
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Malformed JSON payload."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 400 and an error about malformed JSON.",
+            "when": "A POST request is sent with an invalid JSON body."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Verify that the endpoint ignores extra, non-required fields in the request payload and creates the task.",
+          "id": "create_task_extra_fields",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Create Task with Extra Fields",
+          "request_body_json": {
+            "Description": "Optimize database queries for speed.",
+            "Due_date": "2024-07-19",
+            "ExtraField": "Should be ignored",
+            "Location": "Ames",
+            "Priority": "High",
+            "Title": "Optimize DB",
+            "User_name": "frank"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "Description": "Optimize database queries for speed.",
+            "Due_date": "2024-07-19",
+            "Location": "Ames",
+            "Priority": "High",
+            "Title": "Optimize DB",
+            "User_name": "frank"
           },
           "response_status_code": 201,
           "test_setup": {
-            "given": "All fields provided at minimum allowed length (single character).",
-            "then": "Task is created successfully and 201 response is returned.",
-            "when": "POST request is made to /tasks."
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 201 and ignores the extra field.",
+            "when": "A POST request is sent with all required fields and an extra field."
           },
           "type": "edge"
+        },
+        {
+          "description": "Verify that the endpoint rejects task creation if any required string field is an empty string.",
+          "id": "create_task_empty_strings",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Reject Task Creation with Empty String Fields",
+          "request_body_json": {
+            "Description": "Prepare slides for meeting.",
+            "Due_date": "2024-07-21",
+            "Location": "Ames",
+            "Priority": "High",
+            "Title": "",
+            "User_name": "grace"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Field 'Title' cannot be empty."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 400 and an error about the empty Title field.",
+            "when": "A POST request is sent with Title as an empty string."
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify that the endpoint successfully creates a task when fields have values at their maximum allowed length.",
+          "id": "create_task_long_field_values",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Create Task with Maximum Length Fields",
+          "request_body_json": {
+            "Description": "B.repeat(1024)",
+            "Due_date": "2024-07-25",
+            "Location": "Boone",
+            "Priority": "High",
+            "Title": "A.repeat(255)",
+            "User_name": "user_max"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "Description": "B.repeat(1024)",
+            "Due_date": "2024-07-25",
+            "Location": "Boone",
+            "Priority": "High",
+            "Title": "A.repeat(255)",
+            "User_name": "user_max"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "No existing task with the same details and field length limits are enforced as per schema.",
+            "then": "The endpoint responds with 201 and returns the created task.",
+            "when": "A POST request is sent with Title of 255 chars and Description of 1024 chars."
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify the endpoint allows special characters in string fields and creates the task.",
+          "id": "create_task_special_characters",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Create Task with Special Characters in Fields",
+          "request_body_json": {
+            "Description": "Deploy the app at 2:00 AM. Notify team: alice@example.com",
+            "Due_date": "2024-07-26",
+            "Location": "Ames",
+            "Priority": "High",
+            "Title": "Deploy @ Night! #urgent",
+            "User_name": "user$123"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "Description": "Deploy the app at 2:00 AM. Notify team: alice@example.com",
+            "Due_date": "2024-07-26",
+            "Location": "Ames",
+            "Priority": "High",
+            "Title": "Deploy @ Night! #urgent",
+            "User_name": "user$123"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 201 and returns the created task.",
+            "when": "A POST request is sent with special characters in Title, Description, and User_name."
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify that the endpoint rejects task creation when Due_date is in an invalid format.",
+          "id": "create_task_invalid_date_format",
+          "implementation_id": "task_controller_create_task_endpoint",
+          "name": "Reject Task Creation with Invalid Due_date Format",
+          "request_body_json": {
+            "Description": "Submit monthly timesheet.",
+            "Due_date": "15-07-2024",
+            "Location": "Boone",
+            "Priority": "Low",
+            "Title": "Submit Timesheet",
+            "User_name": "hannah"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid date format for Due_date. Expected format: YYYY-MM-DD."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "No existing task with the same details.",
+            "then": "The endpoint responds with 400 and an error about invalid date format.",
+            "when": "A POST request is sent with Due_date in 'DD-MM-YYYY' format."
+          },
+          "type": "negative"
         }
-      ],
-      "test_path": ".codevalid/tests/task_6318203745_20240611140000/task_controller_create_task_endpoint.py"
+      ]
     }
   ]
 }
