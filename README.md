@@ -10,4 +10,4 @@ Python program with REST endpoint
   - Priority
   - Due date
   - User_name
-  - location
+  - location, location should be restricted to Ames or Boone.
