@@ -2130,6 +2130,775 @@
           "type": "edge"
         }
       ]
+    },
+    {
+      "implementation_id": "service_create_task",
+      "test_cases": [
+        {
+          "description": "Tests creating a task with all required fields and location as 'Ames'.",
+          "id": "tc_create_task_valid_ames",
+          "implementation_id": "service_create_task",
+          "name": "Create task with all valid fields and location Ames",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Need to buy milk and eggs.",
+                "due_date": "2024-07-10",
+                "location": "Ames",
+                "priority": 2,
+                "title": "Buy groceries",
+                "user_name": "john_doe"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "description": "Need to buy milk and eggs.",
+                "due_date": "2024-07-10",
+                "location": "Ames",
+                "priority": 2,
+                "title": "Buy groceries",
+                "user_name": "john_doe"
+              },
+              "status_code": 201
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Tests creating a task with all required fields and location as 'Boone'.",
+          "id": "tc_create_task_valid_boone",
+          "implementation_id": "service_create_task",
+          "name": "Create task with all valid fields and location Boone",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Complete the REST API implementation.",
+                "due_date": "2024-07-15",
+                "location": "Boone",
+                "priority": "High",
+                "title": "Finish project",
+                "user_name": "jane_smith"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "description": "Complete the REST API implementation.",
+                "due_date": "2024-07-15",
+                "location": "Boone",
+                "priority": "High",
+                "title": "Finish project",
+                "user_name": "jane_smith"
+              },
+              "status_code": 201
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Tests rejection when the location is not 'Ames' or 'Boone'.",
+          "id": "tc_create_task_invalid_location",
+          "implementation_id": "service_create_task",
+          "name": "Create task with invalid location",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Fix the leaking sink.",
+                "due_date": "2024-07-12",
+                "location": "Des Moines",
+                "priority": 1,
+                "title": "Call plumber",
+                "user_name": "alice_wonder"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Invalid location. Only 'Ames' or 'Boone' are allowed."
+              },
+              "status_code": 400
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests error response when the required 'title' field is missing.",
+          "id": "tc_create_task_missing_title",
+          "implementation_id": "service_create_task",
+          "name": "Create task missing title",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Prepare for exam.",
+                "due_date": "2024-07-20",
+                "location": "Ames",
+                "priority": "Low",
+                "user_name": "bob_ross"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Missing required field: title"
+              },
+              "status_code": 400
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests error response when multiple required fields are missing.",
+          "id": "tc_create_task_missing_multiple_fields",
+          "implementation_id": "service_create_task",
+          "name": "Create task missing multiple required fields",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "due_date": "2024-08-01",
+                "location": "Boone",
+                "priority": "Medium"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Missing required fields: title, description, user_name"
+              },
+              "status_code": 400
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests rejection when the due date is not in a valid date format.",
+          "id": "tc_create_task_invalid_date_format",
+          "implementation_id": "service_create_task",
+          "name": "Create task with invalid due date format",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Add new project experience.",
+                "due_date": "07-12-2024",
+                "location": "Ames",
+                "priority": 3,
+                "title": "Update resume",
+                "user_name": "nancy_green"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Invalid data type: due_date must be in 'YYYY-MM-DD' format."
+              },
+              "status_code": 400
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests rejection when priority is not a string or integer.",
+          "id": "tc_create_task_invalid_priority_type",
+          "implementation_id": "service_create_task",
+          "name": "Create task with invalid priority type",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Water the backyard plants.",
+                "due_date": "2024-07-09",
+                "location": "Ames",
+                "priority": [
+                  "High"
+                ],
+                "title": "Water plants",
+                "user_name": "erin_white"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Invalid data type: priority must be string or integer."
+              },
+              "status_code": 400
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests creation when the description is an empty string.",
+          "id": "tc_create_task_empty_description",
+          "implementation_id": "service_create_task",
+          "name": "Create task with empty description",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "",
+                "due_date": "2024-07-13",
+                "location": "Boone",
+                "priority": 1,
+                "title": "Read book",
+                "user_name": "leo_harris"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "description": "",
+                "due_date": "2024-07-13",
+                "location": "Boone",
+                "priority": 1,
+                "title": "Read book",
+                "user_name": "leo_harris"
+              },
+              "status_code": 201
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Tests creation with a very long title (boundary condition).",
+          "id": "tc_create_task_long_title",
+          "implementation_id": "service_create_task",
+          "name": "Create task with maximum length title",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Long title test.",
+                "due_date": "2024-07-25",
+                "location": "Ames",
+                "priority": 5,
+                "title": "T.repeat(255)",
+                "user_name": "max_length_user"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "description": "Long title test.",
+                "due_date": "2024-07-25",
+                "location": "Ames",
+                "priority": 5,
+                "title": "T.repeat(255)",
+                "user_name": "max_length_user"
+              },
+              "status_code": 201
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Tests rejection when user_name is an empty string.",
+          "id": "tc_create_task_empty_user_name",
+          "implementation_id": "service_create_task",
+          "name": "Create task with empty user_name",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Clean up old documents.",
+                "due_date": "2024-07-11",
+                "location": "Boone",
+                "priority": 2,
+                "title": "Organize files",
+                "user_name": ""
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "error": "user_name cannot be empty."
+              },
+              "status_code": 400
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests rejection when title is not a string.",
+          "id": "tc_create_task_invalid_title_type",
+          "implementation_id": "service_create_task",
+          "name": "Create task with non-string title",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Title is integer.",
+                "due_date": "2024-07-10",
+                "location": "Ames",
+                "priority": 1,
+                "title": 12345,
+                "user_name": "number_title"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Invalid data type: title must be a string."
+              },
+              "status_code": 400
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests rejection when location is not a string.",
+          "id": "tc_create_task_invalid_location_type",
+          "implementation_id": "service_create_task",
+          "name": "Create task with non-string location",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Non-string location.",
+                "due_date": "2024-07-18",
+                "location": [
+                  "Ames"
+                ],
+                "priority": 2,
+                "title": "Test task",
+                "user_name": "test_user"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "error": "Invalid data type: location must be a string."
+              },
+              "status_code": 400
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests creation when priority is a string representing a number.",
+          "id": "tc_create_task_priority_as_string_number",
+          "implementation_id": "service_create_task",
+          "name": "Create task with priority as string-number",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Review unread emails.",
+                "due_date": "2024-07-14",
+                "location": "Boone",
+                "priority": "1",
+                "title": "Check emails",
+                "user_name": "mail_checker"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "description": "Review unread emails.",
+                "due_date": "2024-07-14",
+                "location": "Boone",
+                "priority": "1",
+                "title": "Check emails",
+                "user_name": "mail_checker"
+              },
+              "status_code": 201
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Tests creation with the shortest non-empty strings and lowest numeric values accepted.",
+          "id": "tc_create_task_minimum_fields",
+          "implementation_id": "service_create_task",
+          "name": "Create task with minimum valid data",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "D",
+                "due_date": "2024-07-01",
+                "location": "Ames",
+                "priority": 0,
+                "title": "T",
+                "user_name": "U"
+              }
+            },
+            "then": {
+              "response_body_json": {
+                "description": "D",
+                "due_date": "2024-07-01",
+                "location": "Ames",
+                "priority": 0,
+                "title": "T",
+                "user_name": "U"
+              },
+              "status_code": 201
+            },
+            "when": "TaskService.create_task is called with the above data"
+          },
+          "type": "edge"
+        }
+      ]
+    },
+    {
+      "implementation_id": "repository_add_task",
+      "test_cases": [
+        {
+          "description": "Tests adding a task with all required fields and valid values, location 'Ames'.",
+          "id": "TC001_add_valid_task_ames",
+          "implementation_id": "repository_add_task",
+          "name": "Add Task with All Valid Fields (Location: Ames)",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Milk, Bread, Eggs",
+                "due_date": "2024-06-25",
+                "location": "Ames",
+                "priority": 2,
+                "title": "Buy groceries",
+                "user_name": "alice"
+              }
+            },
+            "then": {
+              "http_status": 201,
+              "response_body_json": {
+                "description": "Milk, Bread, Eggs",
+                "due_date": "2024-06-25",
+                "id": "auto_generated_id",
+                "location": "Ames",
+                "priority": 2,
+                "title": "Buy groceries",
+                "user_name": "alice"
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Tests adding a task with all required fields and valid values, location 'Boone'.",
+          "id": "TC002_add_valid_task_boone",
+          "implementation_id": "repository_add_task",
+          "name": "Add Task with All Valid Fields (Location: Boone)",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Fix kitchen sink",
+                "due_date": "2024-07-01",
+                "location": "Boone",
+                "priority": "high",
+                "title": "Call plumber",
+                "user_name": "bob"
+              }
+            },
+            "then": {
+              "http_status": 201,
+              "response_body_json": {
+                "description": "Fix kitchen sink",
+                "due_date": "2024-07-01",
+                "id": "auto_generated_id",
+                "location": "Boone",
+                "priority": "high",
+                "title": "Call plumber",
+                "user_name": "bob"
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Tests behavior when the title field is missing from the request.",
+          "id": "TC003_missing_title",
+          "implementation_id": "repository_add_task",
+          "name": "Missing Title Field",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Meeting with team",
+                "due_date": "2024-06-29",
+                "location": "Ames",
+                "priority": 1,
+                "user_name": "carol"
+              }
+            },
+            "then": {
+              "http_status": 400,
+              "response_body_json": {
+                "error": "Missing required field: title"
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests behavior when multiple required fields are missing from the request.",
+          "id": "TC004_missing_multiple_fields",
+          "implementation_id": "repository_add_task",
+          "name": "Missing Multiple Required Fields",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "location": "Boone",
+                "priority": 3,
+                "title": "Prepare report"
+              }
+            },
+            "then": {
+              "http_status": 400,
+              "response_body_json": {
+                "error": "Missing required fields: description, due_date, user_name"
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests rejection when location is not 'Ames' or 'Boone'.",
+          "id": "TC005_invalid_location",
+          "implementation_id": "repository_add_task",
+          "name": "Invalid Location",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Daily routine",
+                "due_date": "2024-06-22",
+                "location": "Des Moines",
+                "priority": "low",
+                "title": "Water plants",
+                "user_name": "dave"
+              }
+            },
+            "then": {
+              "http_status": 400,
+              "response_body_json": {
+                "error": "Invalid location: must be 'Ames' or 'Boone'"
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests rejection when priority is not a string or integer.",
+          "id": "TC006_invalid_priority_type",
+          "implementation_id": "repository_add_task",
+          "name": "Invalid Priority Data Type",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Math assignment",
+                "due_date": "2024-06-28",
+                "location": "Ames",
+                "priority": {
+                  "level": "high"
+                },
+                "title": "Finish homework",
+                "user_name": "emma"
+              }
+            },
+            "then": {
+              "http_status": 400,
+              "response_body_json": {
+                "error": "Data type mismatch: priority must be string or integer"
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests rejection when due_date is not in date format.",
+          "id": "TC007_invalid_due_date_format",
+          "implementation_id": "repository_add_task",
+          "name": "Invalid Due Date Format",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Vacation planning",
+                "due_date": "June 28, 2024",
+                "location": "Boone",
+                "priority": 1,
+                "title": "Schedule flight",
+                "user_name": "frank"
+              }
+            },
+            "then": {
+              "http_status": 400,
+              "response_body_json": {
+                "error": "Data type mismatch: due_date must be in date format (YYYY-MM-DD)"
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests rejection when user_name is not a string.",
+          "id": "TC008_invalid_user_name_type",
+          "implementation_id": "repository_add_task",
+          "name": "Invalid User Name Data Type",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "At post office",
+                "due_date": "2024-06-27",
+                "location": "Ames",
+                "priority": "medium",
+                "title": "Pick up package",
+                "user_name": [
+                  "harry"
+                ]
+              }
+            },
+            "then": {
+              "http_status": 400,
+              "response_body_json": {
+                "error": "Data type mismatch: user_name must be string"
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Tests edge case when required string fields are empty.",
+          "id": "TC009_empty_string_fields",
+          "implementation_id": "repository_add_task",
+          "name": "Empty String Fields",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "",
+                "due_date": "2024-06-30",
+                "location": "Boone",
+                "priority": "",
+                "title": "",
+                "user_name": ""
+              }
+            },
+            "then": {
+              "http_status": 201,
+              "response_body_json": {
+                "description": "",
+                "due_date": "2024-06-30",
+                "id": "auto_generated_id",
+                "location": "Boone",
+                "priority": "",
+                "title": "",
+                "user_name": ""
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Tests edge case for minimum priority value (integer = 0).",
+          "id": "TC010_minimum_priority_edge",
+          "implementation_id": "repository_add_task",
+          "name": "Minimum Priority Value (Edge)",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "Lowest priority possible",
+                "due_date": "2024-06-26",
+                "location": "Ames",
+                "priority": 0,
+                "title": "Zero Priority Task",
+                "user_name": "ivy"
+              }
+            },
+            "then": {
+              "http_status": 201,
+              "response_body_json": {
+                "description": "Lowest priority possible",
+                "due_date": "2024-06-26",
+                "id": "auto_generated_id",
+                "location": "Ames",
+                "priority": 0,
+                "title": "Zero Priority Task",
+                "user_name": "ivy"
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Tests edge case for maximum allowed length in title and description fields.",
+          "id": "TC011_maximum_length_fields",
+          "implementation_id": "repository_add_task",
+          "name": "Maximum Length for Title and Description",
+          "test_setup": {
+            "given": {
+              "request_body_json": {
+                "description": "D.repeat(1024)",
+                "due_date": "2024-07-02",
+                "location": "Boone",
+                "priority": "high",
+                "title": "T.repeat(255)",
+                "user_name": "max"
+              }
+            },
+            "then": {
+              "http_status": 201,
+              "response_body_json": {
+                "description": "D.repeat(1024)",
+                "due_date": "2024-07-02",
+                "id": "auto_generated_id",
+                "location": "Boone",
+                "priority": "high",
+                "title": "T.repeat(255)",
+                "user_name": "max"
+              }
+            },
+            "when": "TaskRepository.add_task is called with the above input."
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Tests that adding duplicate task data results in different task IDs.",
+          "id": "TC012_duplicate_task_data_different_id",
+          "implementation_id": "repository_add_task",
+          "name": "Duplicate Task Data Returns Different IDs",
+          "test_setup": {
+            "given": {
+              "request_body_json_1": {
+                "description": "Same data",
+                "due_date": "2024-07-04",
+                "location": "Ames",
+                "priority": 5,
+                "title": "Duplicate Task",
+                "user_name": "oliver"
+              },
+              "request_body_json_2": {
+                "description": "Same data",
+                "due_date": "2024-07-04",
+                "location": "Ames",
+                "priority": 5,
+                "title": "Duplicate Task",
+                "user_name": "oliver"
+              }
+            },
+            "then": {
+              "assert": "auto_generated_id_1 != auto_generated_id_2",
+              "response_body_json_1": {
+                "description": "Same data",
+                "due_date": "2024-07-04",
+                "id": "auto_generated_id_1",
+                "location": "Ames",
+                "priority": 5,
+                "title": "Duplicate Task",
+                "user_name": "oliver"
+              },
+              "response_body_json_2": {
+                "description": "Same data",
+                "due_date": "2024-07-04",
+                "id": "auto_generated_id_2",
+                "location": "Ames",
+                "priority": 5,
+                "title": "Duplicate Task",
+                "user_name": "oliver"
+              }
+            },
+            "when": "TaskRepository.add_task is called twice with the same input."
+          },
+          "type": "edge"
+        }
+      ]
     }
   ],
   "component": [],
@@ -3088,6 +3857,478 @@
             "given": "A task with same Title, User_name, Due_date, and Location already exists.",
             "then": "Request is rejected with status 409 and error message.",
             "when": "POST /tasks is called with duplicate task data."
+          },
+          "type": "edge"
+        }
+      ]
+    },
+    {
+      "implementation_id": "endpoint_create_task",
+      "test_cases": [
+        {
+          "description": "Test creating a task with all valid fields and a valid location ('Ames').",
+          "id": "TC1_create_valid_task",
+          "implementation_id": "endpoint_create_task",
+          "name": "create_valid_task",
+          "request_body_json": {
+            "description": "Buy milk, eggs, and bread.",
+            "due_date": "2024-06-10",
+            "location": "Ames",
+            "priority": "High",
+            "title": "Buy groceries",
+            "user_name": "alice"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "description": "Buy milk, eggs, and bread.",
+            "due_date": "2024-06-10",
+            "location": "Ames",
+            "priority": "High",
+            "title": "Buy groceries",
+            "user_name": "alice"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "Task service has no restrictions and the location is valid.",
+            "then": "Task is created and all fields are returned in the response.",
+            "when": "A POST request with all valid fields is made."
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Test creating a task with all valid fields and location set to 'Boone'.",
+          "id": "TC2_create_valid_task_boone",
+          "implementation_id": "endpoint_create_task",
+          "name": "create_valid_task_boone",
+          "request_body_json": {
+            "description": "Complete science assignment.",
+            "due_date": "2024-06-11",
+            "location": "Boone",
+            "priority": 2,
+            "title": "Submit assignment",
+            "user_name": "bob"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "description": "Complete science assignment.",
+            "due_date": "2024-06-11",
+            "location": "Boone",
+            "priority": 2,
+            "title": "Submit assignment",
+            "user_name": "bob"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "Task service has no restrictions and the location is 'Boone'.",
+            "then": "Task is created and all fields are returned in the response.",
+            "when": "A POST request with all fields and location as 'Boone' is made."
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Test creating a task with the required field 'title' missing.",
+          "id": "TC3_missing_title",
+          "implementation_id": "endpoint_create_task",
+          "name": "missing_title",
+          "request_body_json": {
+            "description": "Do laundry.",
+            "due_date": "2024-06-12",
+            "location": "Ames",
+            "priority": "Low",
+            "user_name": "carol"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "details": [
+              "title"
+            ],
+            "error": "Missing required fields"
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "All fields except 'title' are provided.",
+            "then": "Request is rejected and missing field is specified in the error.",
+            "when": "A POST request is made with 'title' missing."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test creating a task with multiple required fields ('title', 'due_date') missing.",
+          "id": "TC4_missing_multiple_fields",
+          "implementation_id": "endpoint_create_task",
+          "name": "missing_multiple_fields",
+          "request_body_json": {
+            "description": "Prepare presentation.",
+            "location": "Boone",
+            "priority": "Medium",
+            "user_name": "dave"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "details": [
+              "title",
+              "due_date"
+            ],
+            "error": "Missing required fields"
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "Some required fields are omitted.",
+            "then": "Request is rejected and both missing fields are reported.",
+            "when": "A POST request is made with 'title' and 'due_date' missing."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test creating a task with an invalid location value ('Des Moines').",
+          "id": "TC5_invalid_location",
+          "implementation_id": "endpoint_create_task",
+          "name": "invalid_location",
+          "request_body_json": {
+            "description": "Read '1984' by George Orwell.",
+            "due_date": "2024-06-13",
+            "location": "Des Moines",
+            "priority": "High",
+            "title": "Read book",
+            "user_name": "erin"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "details": [
+              "location"
+            ],
+            "error": "Invalid location"
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "A location not in ['Ames', 'Boone'] is provided.",
+            "then": "Request is rejected and error specifies invalid location.",
+            "when": "A POST request is made with location 'Des Moines'."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test creating a task with an invalid data type for 'priority' (array instead of string/integer).",
+          "id": "TC6_invalid_priority_type",
+          "implementation_id": "endpoint_create_task",
+          "name": "invalid_priority_type",
+          "request_body_json": {
+            "description": "Evening walk.",
+            "due_date": "2024-06-14",
+            "location": "Ames",
+            "priority": [
+              1,
+              2
+            ],
+            "title": "Walk dog",
+            "user_name": "frank"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "details": [
+              "priority"
+            ],
+            "error": "Invalid data type"
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "'priority' is provided as a list instead of string/integer.",
+            "then": "Request is rejected with error specifying data type mismatch for 'priority'.",
+            "when": "A POST request is made."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test creating a task with an invalid date format for 'due_date'.",
+          "id": "TC7_invalid_due_date_format",
+          "implementation_id": "endpoint_create_task",
+          "name": "invalid_due_date_format",
+          "request_body_json": {
+            "description": "Spring cleaning.",
+            "due_date": "June 15, 2024",
+            "location": "Boone",
+            "priority": "Low",
+            "title": "Clean room",
+            "user_name": "grace"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "details": [
+              "due_date"
+            ],
+            "error": "Invalid data type"
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "'due_date' is not in the required date format.",
+            "then": "Request is rejected with error specifying data type mismatch for 'due_date'.",
+            "when": "A POST request is made with improperly formatted due_date."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test creating a task with all string fields as empty strings.",
+          "id": "TC8_empty_string_fields",
+          "implementation_id": "endpoint_create_task",
+          "name": "empty_string_fields",
+          "request_body_json": {
+            "description": "",
+            "due_date": "2024-06-16",
+            "location": "Ames",
+            "priority": "",
+            "title": "",
+            "user_name": ""
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "description": "",
+            "due_date": "2024-06-16",
+            "location": "Ames",
+            "priority": "",
+            "title": "",
+            "user_name": ""
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "All string fields are empty but present.",
+            "then": "Task is created, as empty strings are accepted as valid values.",
+            "when": "A POST request is made."
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Test creating a task with 'priority' as an integer (allowed type).",
+          "id": "TC9_priority_as_integer",
+          "implementation_id": "endpoint_create_task",
+          "name": "priority_as_integer",
+          "request_body_json": {
+            "description": "Plan a road trip to Ames.",
+            "due_date": "2024-06-17",
+            "location": "Ames",
+            "priority": 1,
+            "title": "Plan trip",
+            "user_name": "hank"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "description": "Plan a road trip to Ames.",
+            "due_date": "2024-06-17",
+            "location": "Ames",
+            "priority": 1,
+            "title": "Plan trip",
+            "user_name": "hank"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "'priority' is provided as an integer.",
+            "then": "Task is created and all fields are returned.",
+            "when": "A POST request is made."
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Test creating a task with extra fields in the payload, which should be ignored.",
+          "id": "TC10_extra_fields_ignored",
+          "implementation_id": "endpoint_create_task",
+          "name": "extra_fields_ignored",
+          "request_body_json": {
+            "description": "File tax return.",
+            "due_date": "2024-06-18",
+            "extra_field": "should be ignored",
+            "location": "Boone",
+            "priority": "High",
+            "title": "Do taxes",
+            "user_name": "ian"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "description": "File tax return.",
+            "due_date": "2024-06-18",
+            "location": "Boone",
+            "priority": "High",
+            "title": "Do taxes",
+            "user_name": "ian"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "Payload contains fields not defined in the spec.",
+            "then": "Task is created and extra fields are ignored in the response.",
+            "when": "A POST request is made."
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Test creating a task with 'title' as integer instead of string.",
+          "id": "TC11_invalid_title_type",
+          "implementation_id": "endpoint_create_task",
+          "name": "invalid_title_type",
+          "request_body_json": {
+            "description": "Test invalid title type.",
+            "due_date": "2024-06-19",
+            "location": "Ames",
+            "priority": "Medium",
+            "title": 1234,
+            "user_name": "jane"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "details": [
+              "title"
+            ],
+            "error": "Invalid data type"
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "'title' is an integer.",
+            "then": "Request is rejected with error specifying data type mismatch for 'title'.",
+            "when": "A POST request is made."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test creating a task with location 'ames' in lowercase, which should be rejected if case-sensitive.",
+          "id": "TC12_location_case_sensitivity",
+          "implementation_id": "endpoint_create_task",
+          "name": "location_case_sensitivity",
+          "request_body_json": {
+            "description": "Collect mail from mailbox.",
+            "due_date": "2024-06-20",
+            "location": "ames",
+            "priority": "Low",
+            "title": "Check mail",
+            "user_name": "kate"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "details": [
+              "location"
+            ],
+            "error": "Invalid location"
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "Location is given in lowercase.",
+            "then": "Request is rejected due to case-sensitive location constraint.",
+            "when": "A POST request is made."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test creating a task with required fields set to null.",
+          "id": "TC13_null_fields",
+          "implementation_id": "endpoint_create_task",
+          "name": "null_fields",
+          "request_body_json": {
+            "description": null,
+            "due_date": null,
+            "location": null,
+            "priority": null,
+            "title": null,
+            "user_name": null
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "details": [
+              "title",
+              "description",
+              "priority",
+              "due_date",
+              "user_name",
+              "location"
+            ],
+            "error": "Invalid data type"
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "All fields provided as null.",
+            "then": "Request is rejected and all fields are reported as data type mismatches.",
+            "when": "A POST request is made."
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Test creating a task with a very long title to check boundary conditions.",
+          "id": "TC14_boundary_title_length",
+          "implementation_id": "endpoint_create_task",
+          "name": "boundary_title_length",
+          "request_body_json": {
+            "description": "Boundary test for long title.",
+            "due_date": "2024-06-21",
+            "location": "Ames",
+            "priority": "High",
+            "title": "T.repeat(255)",
+            "user_name": "laura"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "description": "Boundary test for long title.",
+            "due_date": "2024-06-21",
+            "location": "Ames",
+            "priority": "High",
+            "title": "T.repeat(255)",
+            "user_name": "laura"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "No maximum enforced length on title.",
+            "then": "Task is created and title is stored as is.",
+            "when": "A POST request is made with a very long title."
           },
           "type": "edge"
         }
