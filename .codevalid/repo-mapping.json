@@ -2,12 +2,12 @@
   "task_8193457210_20240612120000": {
     "implementation": [
       {
-        "How_is_it_connected_to_implementation": "Defines the REST endpoint '/tasks' for adding a new task. Receives task data as a POST request and invokes the service layer to process and store the task.",
+        "How_is_it_connected_to_implementation": "Defines the REST endpoint '/tasks' for adding a new task. Receives task data as a POST request and invokes the service layer to process and store the task. Handles exceptions and returns HTTP 400 on error.",
         "change_type": "unchanged",
         "file_path": "app/controllers/task_controller.py",
         "id": "endpoint_create_task_rest_20240612",
         "name": "create_task",
-        "pseudo_code": "When a POST request is made to '/tasks' with task data:\n    Try to create a new task using the service layer\n    If successful, return the created task\n    If an error occurs, raise an HTTP exception",
+        "pseudo_code": "When a POST request is made to '/tasks' with task data:\n    Try to create a new task using the service layer\n    If successful, return the created task\n    If an error occurs, raise an HTTP exception with status 400",
         "type": "endpoint"
       },
       {
