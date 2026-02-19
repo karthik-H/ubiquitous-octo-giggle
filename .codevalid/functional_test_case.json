@@ -743,6 +743,454 @@
           "type": "negative"
         }
       ]
+    },
+    {
+      "implementation_id": "task_creation_service",
+      "test_cases": [
+        {
+          "description": "Verify that a task is successfully created when the location field is set to 'Ames'.",
+          "id": "create_task_with_location_ames_positive",
+          "implementation_id": "task_creation_service",
+          "name": "create_task_with_location_ames",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Task for Ames",
+                "location": "Ames",
+                "title": "Sample Task"
+              }
+            },
+            "then": {
+              "created_task": {
+                "description": "Task for Ames",
+                "location": "Ames",
+                "title": "Sample Task"
+              },
+              "status": "success"
+            },
+            "when": "TaskService.create_task(task_data) is called"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Verify that a task is successfully created when the location field is set to 'Boone'.",
+          "id": "create_task_with_location_boone_positive",
+          "implementation_id": "task_creation_service",
+          "name": "create_task_with_location_boone",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Task for Boone",
+                "location": "Boone",
+                "title": "Boone Task"
+              }
+            },
+            "then": {
+              "created_task": {
+                "description": "Task for Boone",
+                "location": "Boone",
+                "title": "Boone Task"
+              },
+              "status": "success"
+            },
+            "when": "TaskService.create_task(task_data) is called"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Verify that task creation fails when the location field is set to an invalid value not in ['Ames', 'Boone'].",
+          "id": "create_task_with_invalid_location_negative",
+          "implementation_id": "task_creation_service",
+          "name": "create_task_with_invalid_location",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Task with invalid location",
+                "location": "Des Moines",
+                "title": "Invalid Location Task"
+              }
+            },
+            "then": {
+              "error_message": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "error"
+            },
+            "when": "TaskService.create_task(task_data) is called"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Verify that task creation fails when the location field is null.",
+          "id": "create_task_with_null_location_negative",
+          "implementation_id": "task_creation_service",
+          "name": "create_task_with_null_location",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Task with null location",
+                "location": null,
+                "title": "Null Location Task"
+              }
+            },
+            "then": {
+              "error_message": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "error"
+            },
+            "when": "TaskService.create_task(task_data) is called"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify that task creation fails when the location field is an empty string.",
+          "id": "create_task_with_empty_location_negative",
+          "implementation_id": "task_creation_service",
+          "name": "create_task_with_empty_location",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Task with empty location",
+                "location": "",
+                "title": "Empty Location Task"
+              }
+            },
+            "then": {
+              "error_message": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "error"
+            },
+            "when": "TaskService.create_task(task_data) is called"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify that task creation fails when the location field contains only whitespace.",
+          "id": "create_task_with_whitespace_location_negative",
+          "implementation_id": "task_creation_service",
+          "name": "create_task_with_whitespace_location",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Task with whitespace location",
+                "location": "   ",
+                "title": "Whitespace Location Task"
+              }
+            },
+            "then": {
+              "error_message": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "error"
+            },
+            "when": "TaskService.create_task(task_data) is called"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify that task creation fails if the location field is set to 'ames' or 'boone' (lowercase), assuming the check is case-sensitive.",
+          "id": "create_task_with_location_case_sensitive_negative",
+          "implementation_id": "task_creation_service",
+          "name": "create_task_with_location_case_sensitive",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Task with lowercase location",
+                "location": "ames",
+                "title": "Lowercase Location"
+              }
+            },
+            "then": {
+              "error_message": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "error"
+            },
+            "when": "TaskService.create_task(task_data) is called"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Verify that task creation fails when the location field is set to 'Ames ' (with trailing spaces).",
+          "id": "create_task_with_location_trailing_spaces_negative",
+          "implementation_id": "task_creation_service",
+          "name": "create_task_with_location_trailing_spaces",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Task with trailing space in location",
+                "location": "Ames ",
+                "title": "Trailing Space Location"
+              }
+            },
+            "then": {
+              "error_message": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "error"
+            },
+            "when": "TaskService.create_task(task_data) is called"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify that task creation fails when the location field is set to ' Boone' (with leading spaces).",
+          "id": "create_task_with_location_leading_spaces_negative",
+          "implementation_id": "task_creation_service",
+          "name": "create_task_with_location_leading_spaces",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Task with leading space in location",
+                "location": " Boone",
+                "title": "Leading Space Location"
+              }
+            },
+            "then": {
+              "error_message": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "error"
+            },
+            "when": "TaskService.create_task(task_data) is called"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify that task creation fails when the location field contains 'Ames!' (with special characters).",
+          "id": "create_task_with_location_special_characters_negative",
+          "implementation_id": "task_creation_service",
+          "name": "create_task_with_location_special_characters",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Task with special character in location",
+                "location": "Ames!",
+                "title": "Special Character Location"
+              }
+            },
+            "then": {
+              "error_message": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "error"
+            },
+            "when": "TaskService.create_task(task_data) is called"
+          },
+          "type": "negative"
+        }
+      ]
+    },
+    {
+      "implementation_id": "task_creation_repository",
+      "test_cases": [
+        {
+          "description": "Verify task creation succeeds when location is 'Ames'.",
+          "id": "TC_ADD_TASK_LOCATION_AMES",
+          "implementation_id": "task_creation_repository",
+          "name": "add_task_with_location_ames",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Vacuum the main hall",
+                "location": "Ames",
+                "title": "Clean office"
+              }
+            },
+            "then": {
+              "result": {
+                "description": "Vacuum the main hall",
+                "id": "auto_incremented_id",
+                "location": "Ames",
+                "title": "Clean office"
+              },
+              "status": "success"
+            },
+            "when": "TaskRepository.add_task is called with location='Ames'"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Verify task creation succeeds when location is 'Boone'.",
+          "id": "TC_ADD_TASK_LOCATION_BOONE",
+          "implementation_id": "task_creation_repository",
+          "name": "add_task_with_location_boone",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Wash all windows on the first floor",
+                "location": "Boone",
+                "title": "Wash windows"
+              }
+            },
+            "then": {
+              "result": {
+                "description": "Wash all windows on the first floor",
+                "id": "auto_incremented_id",
+                "location": "Boone",
+                "title": "Wash windows"
+              },
+              "status": "success"
+            },
+            "when": "TaskRepository.add_task is called with location='Boone'"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Verify task creation fails when location is not 'Ames' or 'Boone'.",
+          "id": "TC_ADD_TASK_LOCATION_OTHER",
+          "implementation_id": "task_creation_repository",
+          "name": "add_task_with_invalid_location",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Sweep lobby area",
+                "location": "Des Moines",
+                "title": "Clean lobby"
+              }
+            },
+            "then": {
+              "error": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "failure"
+            },
+            "when": "TaskRepository.add_task is called with location='Des Moines'"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Verify task creation fails when location is null.",
+          "id": "TC_ADD_TASK_LOCATION_NULL",
+          "implementation_id": "task_creation_repository",
+          "name": "add_task_with_null_location",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Routine HVAC check",
+                "location": null,
+                "title": "Check HVAC"
+              }
+            },
+            "then": {
+              "error": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "failure"
+            },
+            "when": "TaskRepository.add_task is called with location=null"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify task creation fails when location is empty string.",
+          "id": "TC_ADD_TASK_LOCATION_EMPTY_STRING",
+          "implementation_id": "task_creation_repository",
+          "name": "add_task_with_empty_location",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Stock up printer paper",
+                "location": "",
+                "title": "Refill supplies"
+              }
+            },
+            "then": {
+              "error": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "failure"
+            },
+            "when": "TaskRepository.add_task is called with location=''"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify task creation fails when location is whitespace-only.",
+          "id": "TC_ADD_TASK_LOCATION_WHITESPACE",
+          "implementation_id": "task_creation_repository",
+          "name": "add_task_with_whitespace_location",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Fire alarm sound test",
+                "location": "   ",
+                "title": "Test alarm"
+              }
+            },
+            "then": {
+              "error": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "failure"
+            },
+            "when": "TaskRepository.add_task is called with location='   '"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify task creation fails when location matches 'Ames' or 'Boone' with different casing.",
+          "id": "TC_ADD_TASK_LOCATION_CASE_SENSITIVE",
+          "implementation_id": "task_creation_repository",
+          "name": "add_task_with_case_sensitive_location",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Organize shared desk",
+                "location": "ames",
+                "title": "Clean desk"
+              }
+            },
+            "then": {
+              "error": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "failure"
+            },
+            "when": "TaskRepository.add_task is called with location='ames'"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify task creation fails when location contains special characters.",
+          "id": "TC_ADD_TASK_LOCATION_SPECIAL_CHARS",
+          "implementation_id": "task_creation_repository",
+          "name": "add_task_with_special_char_location",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Install new projector",
+                "location": "Ames!",
+                "title": "Setup projector"
+              }
+            },
+            "then": {
+              "error": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "failure"
+            },
+            "when": "TaskRepository.add_task is called with location='Ames!'"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify task creation fails when location is a very long string.",
+          "id": "TC_ADD_TASK_LOCATION_LONG_STRING",
+          "implementation_id": "task_creation_repository",
+          "name": "add_task_with_long_location_string",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Validate handling of very long location strings",
+                "location": "AmesAmesAmesAmesAmesAmesAmesAmesAmesAmesAmesAmesAmesAmesAmesAmesAmesAmesAmesAmes",
+                "title": "Large location test"
+              }
+            },
+            "then": {
+              "error": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "failure"
+            },
+            "when": "TaskRepository.add_task is called with long location string"
+          },
+          "type": "edge"
+        },
+        {
+          "description": "Verify task creation fails when location is 'Boone ' (trailing space).",
+          "id": "TC_ADD_TASK_LOCATION_BOONE_WITH_SPACE",
+          "implementation_id": "task_creation_repository",
+          "name": "add_task_with_location_boone_and_trailing_space",
+          "test_setup": {
+            "given": {
+              "task_data": {
+                "description": "Check for trailing space handling",
+                "location": "Boone ",
+                "title": "Boone trailing space"
+              }
+            },
+            "then": {
+              "error": "Invalid location: only \"Ames\" and \"Boone\" are allowed.",
+              "status": "failure"
+            },
+            "when": "TaskRepository.add_task is called with location='Boone '"
+          },
+          "type": "edge"
+        }
+      ]
     }
   ],
   "component": [],
@@ -1033,6 +1481,312 @@
             "given": "The system is ready to accept tasks.",
             "then": "A 400 error is returned indicating the first missing required field.",
             "when": "A POST request is sent with an empty body."
+          },
+          "type": "negative"
+        }
+      ]
+    },
+    {
+      "implementation_id": "task_creation_endpoint",
+      "test_cases": [
+        {
+          "description": "Ensure that creating a task with location set to 'Ames' is successful.",
+          "id": "create_task_valid_location_ames",
+          "implementation_id": "task_creation_endpoint",
+          "name": "CreateTaskWithLocationAmes",
+          "request_body_json": {
+            "description": "Create task for Ames",
+            "due_date": "2024-12-31",
+            "location": "Ames",
+            "priority": "High",
+            "title": "Test Task",
+            "user_name": "alice"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "description": "Create task for Ames",
+            "due_date": "2024-12-31",
+            "id": "generated_task_id",
+            "location": "Ames",
+            "priority": "High",
+            "title": "Test Task",
+            "user_name": "alice"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "A valid user and task data with location 'Ames'",
+            "then": "Task is created and the created task is returned with status 201",
+            "when": "POST /tasks is called with the data"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Ensure that creating a task with location set to 'Boone' is successful.",
+          "id": "create_task_valid_location_boone",
+          "implementation_id": "task_creation_endpoint",
+          "name": "CreateTaskWithLocationBoone",
+          "request_body_json": {
+            "description": "Create task for Boone",
+            "due_date": "2024-11-30",
+            "location": "Boone",
+            "priority": "Medium",
+            "title": "Test Task Boone",
+            "user_name": "bob"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "description": "Create task for Boone",
+            "due_date": "2024-11-30",
+            "id": "generated_task_id",
+            "location": "Boone",
+            "priority": "Medium",
+            "title": "Test Task Boone",
+            "user_name": "bob"
+          },
+          "response_status_code": 201,
+          "test_setup": {
+            "given": "A valid user and task data with location 'Boone'",
+            "then": "Task is created and the created task is returned with status 201",
+            "when": "POST /tasks is called with the data"
+          },
+          "type": "positive"
+        },
+        {
+          "description": "Ensure that creating a task with location set to a value other than 'Ames' or 'Boone' is rejected.",
+          "id": "create_task_invalid_location_desmoines",
+          "implementation_id": "task_creation_endpoint",
+          "name": "CreateTaskWithInvalidLocation",
+          "request_body_json": {
+            "description": "Test with Des Moines",
+            "due_date": "2024-10-15",
+            "location": "Des Moines",
+            "priority": "Low",
+            "title": "Invalid Location Task",
+            "user_name": "carol"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid location: only 'Ames' and 'Boone' are allowed."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "A valid user and task data with location 'Des Moines'",
+            "then": "Request is rejected with status 400 and explicit error message",
+            "when": "POST /tasks is called with the data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Ensure that creating a task with location set to null is rejected.",
+          "id": "create_task_location_null",
+          "implementation_id": "task_creation_endpoint",
+          "name": "CreateTaskWithLocationNull",
+          "request_body_json": {
+            "description": "Test with null location",
+            "due_date": "2024-09-12",
+            "location": null,
+            "priority": "High",
+            "title": "Null Location Task",
+            "user_name": "david"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid location: only 'Ames' and 'Boone' are allowed."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "A valid user and task data with location as null",
+            "then": "Request is rejected with status 400 and explicit error message",
+            "when": "POST /tasks is called with the data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Ensure that creating a task with the location field missing is rejected.",
+          "id": "create_task_location_missing",
+          "implementation_id": "task_creation_endpoint",
+          "name": "CreateTaskWithLocationMissing",
+          "request_body_json": {
+            "description": "Test with no location",
+            "due_date": "2024-08-01",
+            "priority": "Medium",
+            "title": "Missing Location Task",
+            "user_name": "eve"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid location: only 'Ames' and 'Boone' are allowed."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "A valid user and task data with no location field",
+            "then": "Request is rejected with status 400 and explicit error message",
+            "when": "POST /tasks is called with the data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Ensure that creating a task with location set to an empty string is rejected.",
+          "id": "create_task_location_empty_string",
+          "implementation_id": "task_creation_endpoint",
+          "name": "CreateTaskWithLocationEmptyString",
+          "request_body_json": {
+            "description": "Test with empty string location",
+            "due_date": "2024-07-15",
+            "location": "",
+            "priority": "Low",
+            "title": "Empty String Location Task",
+            "user_name": "frank"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid location: only 'Ames' and 'Boone' are allowed."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "A valid user and task data with location as empty string",
+            "then": "Request is rejected with status 400 and explicit error message",
+            "when": "POST /tasks is called with the data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Ensure that creating a task with location set to whitespace-only string is rejected.",
+          "id": "create_task_location_whitespace",
+          "implementation_id": "task_creation_endpoint",
+          "name": "CreateTaskWithLocationWhitespace",
+          "request_body_json": {
+            "description": "Test with whitespace location",
+            "due_date": "2024-06-30",
+            "location": "   ",
+            "priority": "High",
+            "title": "Whitespace Location Task",
+            "user_name": "grace"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid location: only 'Ames' and 'Boone' are allowed."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "A valid user and task data with location as whitespace string",
+            "then": "Request is rejected with status 400 and explicit error message",
+            "when": "POST /tasks is called with the data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Ensure that creating a task with location set to 'ames' (lowercase) is rejected (case-sensitive).",
+          "id": "create_task_location_case_sensitive",
+          "implementation_id": "task_creation_endpoint",
+          "name": "CreateTaskWithLocationDifferentCase",
+          "request_body_json": {
+            "description": "Test with lowercase location",
+            "due_date": "2024-10-20",
+            "location": "ames",
+            "priority": "Medium",
+            "title": "Lowercase Location Task",
+            "user_name": "henry"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid location: only 'Ames' and 'Boone' are allowed."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "A valid user and task data with location as 'ames' (lowercase)",
+            "then": "Request is rejected with status 400 and explicit error message",
+            "when": "POST /tasks is called with the data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Ensure that creating a task with location set to ' Ames ' is rejected (leading/trailing spaces not allowed).",
+          "id": "create_task_location_leading_trailing_spaces",
+          "implementation_id": "task_creation_endpoint",
+          "name": "CreateTaskWithLocationAmesWithSpaces",
+          "request_body_json": {
+            "description": "Test with location containing leading/trailing spaces",
+            "due_date": "2024-11-01",
+            "location": " Ames ",
+            "priority": "High",
+            "title": "Ames With Spaces Task",
+            "user_name": "irene"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid location: only 'Ames' and 'Boone' are allowed."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "A valid user and task data with location as ' Ames ' (with spaces)",
+            "then": "Request is rejected with status 400 and explicit error message",
+            "when": "POST /tasks is called with the data"
+          },
+          "type": "negative"
+        },
+        {
+          "description": "Ensure that creating a task with location set to a numeric string is rejected.",
+          "id": "create_task_location_numeric",
+          "implementation_id": "task_creation_endpoint",
+          "name": "CreateTaskWithLocationNumeric",
+          "request_body_json": {
+            "description": "Test with location as numeric string",
+            "due_date": "2024-09-05",
+            "location": "123",
+            "priority": "Low",
+            "title": "Numeric Location Task",
+            "user_name": "jack"
+          },
+          "request_headers": {
+            "Content-Type": "application/json"
+          },
+          "request_method": "POST",
+          "request_url": "/tasks",
+          "response_body_json": {
+            "error": "Invalid location: only 'Ames' and 'Boone' are allowed."
+          },
+          "response_status_code": 400,
+          "test_setup": {
+            "given": "A valid user and task data with location as numeric string",
+            "then": "Request is rejected with status 400 and explicit error message",
+            "when": "POST /tasks is called with the data"
           },
           "type": "negative"
         }
