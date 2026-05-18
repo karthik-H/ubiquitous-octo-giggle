@@ -1,41 +1,70 @@
 import request from 'supertest';
 import { expect } from 'chai';
-import express from 'express';
+import type { Express } from 'express';
 
 describe('not_found_event_update', () => {
-  let app: express.Express;
-  let listenSpy: jest.SpyInstance;
+  let app: Express;
+  let uuidSequence = 0;
 
-  const loadFreshApp = async (): Promise<express.Express> => {
+  const buildApp = async (): Promise<Express> => {
     jest.resetModules();
+    let capturedApp: Express | undefined;
 
-    listenSpy = jest
-      .spyOn(express.application as any, 'listen')
-      .mockImplementation(function mockedListen(this: express.Express, ...args: any[]) {
-        const callback = args.find((arg) => typeof arg === 'function');
-        if (callback) {
-          callback();
-        }
-        return { close: jest.fn() } as any;
-      });
+    jest.doMock('uuid', () => ({
+      v4: jest.fn(() => {
+        uuidSequence += 1;
+        return `evt-${uuidSequence}`;
+      })
+    }));
 
-    await import('../../../../server/src/index');
+    jest.doMock('express', () => {
+      const actual = jest.requireActual('express');
+      const expressFactory = () => {
+        const createdApp = actual.default();
+        createdApp.listen = ((...args: unknown[]) => {
+          const callback = args.find((arg) => typeof arg === 'function') as (() => void) | undefined;
+          if (callback) callback();
+          return {
+            close: jest.fn()
+          } as any;
+        }) as typeof createdApp.listen;
+        capturedApp = createdApp;
+        return createdApp;
+      };
 
-    expect(listenSpy.called).to.equal(true);
-    return listenSpy.mock.instances[0] as express.Express;
+      return {
+        __esModule: true,
+        ...actual,
+        default: expressFactory
+      };
+    });
+
+    await jest.isolateModulesAsync(async () => {
+      await import('../../../server/src/index');
+    });
+
+    if (!capturedApp) {
+      throw new Error('Failed to capture Express app instance');
+    }
+
+    return capturedApp;
   };
 
   beforeEach(async () => {
-    app = await loadFreshApp();
+    uuidSequence = 0;
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
+    app = await buildApp();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
     jest.clearAllMocks();
+    jest.restoreAllMocks();
+    jest.resetModules();
   });
 
-  it('returns 404 when updating a non-existent event ID', async () => {
-    const seed = await request(app)
+  it('returns 404 when updating a non-existent event id', async () => {
+    await request(app)
       .post('/api/events')
       .send({
         name: 'Meeting',
@@ -44,93 +73,97 @@ describe('not_found_event_update', () => {
         endDate: '2023-10-02'
       });
 
-    expect(seed.status).to.equal(201);
-
-    const res = await request(app)
+    const response = await request(app)
       .put('/api/events/evt-999')
       .send({
-        name: 'New Event',
-        description: 'Should fail',
-        startDate: '2023-11-01',
-        endDate: '2023-11-02'
+        name: 'New Event'
       });
 
-    expect(res.status).to.equal(404);
-    expect(res.body).to.deep.equal({ error: 'Event not found' });
+    expect(response.status).to.equal(404);
+    expect(response.body).to.deep.equal({ error: 'Event not found' });
 
-    const existing = await request(app).get(`/api/events/${seed.body.id}`);
+    const existing = await request(app).get('/api/events/evt-1');
     expect(existing.status).to.equal(200);
-    expect(existing.body.name).to.equal('Meeting');
-    expect(existing.body.description).to.equal('Sync');
+    expect(existing.body).to.deep.equal({
+      id: 'evt-1',
+      name: 'Meeting',
+      description: 'Sync',
+      startDate: '2023-10-01',
+      endDate: '2023-10-02'
+    });
   });
 
-  it('returns 404 when fetching a non-existent event by id', async () => {
-    const res = await request(app).get('/api/events/missing-event-id');
+  it('returns 404 when fetching an event id that does not exist', async () => {
+    const response = await request(app).get('/api/events/evt-404');
 
-    expect(res.status).to.equal(404);
-    expect(res.body).to.deep.equal({ error: 'Event not found' });
+    expect(response.status).to.equal(404);
+    expect(response.body).to.deep.equal({ error: 'Event not found' });
   });
 
-  it('returns 204 when deleting a non-existent event and leaves event list unchanged', async () => {
-    const created = await request(app)
-      .post('/api/events')
+  it('returns an empty list initially and keeps the list unchanged after failed update attempts', async () => {
+    const initialList = await request(app).get('/api/events');
+    expect(initialList.status).to.equal(200);
+    expect(initialList.body).to.deep.equal([]);
+
+    const failedUpdate = await request(app)
+      .put('/api/events/evt-missing')
       .send({
-        name: 'Conference',
-        description: 'Annual event',
-        startDate: '2024-04-10',
-        endDate: '2024-04-12'
+        name: 'Ghost Event',
+        description: 'Should not be created',
+        startDate: '2025-01-01',
+        endDate: '2025-01-02'
       });
 
-    expect(created.status).to.equal(201);
+    expect(failedUpdate.status).to.equal(404);
 
-    const deleteRes = await request(app).delete('/api/events/does-not-exist');
-    expect(deleteRes.status).to.equal(204);
-
-    const listRes = await request(app).get('/api/events');
-    expect(listRes.status).to.equal(200);
-    expect(listRes.body).to.have.length(1);
-    expect(listRes.body[0].id).to.equal(created.body.id);
+    const finalList = await request(app).get('/api/events');
+    expect(finalList.status).to.equal(200);
+    expect(finalList.body).to.deep.equal([]);
   });
 
-  it('deletes associated tasks when an existing event is deleted', async () => {
-    const createdEvent = await request(app)
+  it('returns 204 when deleting a non-existent event and leaves data unchanged', async () => {
+    const createResponse = await request(app)
       .post('/api/events')
       .send({
-        name: 'Hackathon',
-        description: 'Build sprint',
-        startDate: '2024-05-01',
-        endDate: '2024-05-02'
+        name: 'Existing Event',
+        description: 'Still here',
+        startDate: '2025-02-01',
+        endDate: '2025-02-02'
       });
 
-    expect(createdEvent.status).to.equal(201);
+    expect(createResponse.status).to.equal(201);
 
-    const createdTask = await request(app)
+    const deleteResponse = await request(app).delete('/api/events/evt-999');
+    expect(deleteResponse.status).to.equal(204);
+
+    const listResponse = await request(app).get('/api/events');
+    expect(listResponse.status).to.equal(200);
+    expect(listResponse.body).to.deep.equal([
+      {
+        id: 'evt-1',
+        name: 'Existing Event',
+        description: 'Still here',
+        startDate: '2025-02-01',
+        endDate: '2025-02-02'
+      }
+    ]);
+  });
+
+  it('rejects task creation for a missing associated event', async () => {
+    const response = await request(app)
       .post('/api/tasks')
       .send({
-        title: 'Prepare agenda',
-        description: 'Outline sessions',
+        title: 'Orphan task',
+        description: 'No event',
         status: 'To Do',
-        eventId: createdEvent.body.id
+        eventId: 'evt-999'
       });
 
-    expect(createdTask.status).to.equal(201);
+    expect(response.status).to.equal(400);
+    expect(response.body).to.deep.equal({ error: 'Associated event not found' });
 
-    const preDeleteTasks = await request(app)
-      .get('/api/tasks')
-      .query({ event_id: createdEvent.body.id });
-    expect(preDeleteTasks.status).to.equal(200);
-    expect(preDeleteTasks.body).to.have.length(1);
-
-    const deleteRes = await request(app).delete(`/api/events/${createdEvent.body.id}`);
-    expect(deleteRes.status).to.equal(204);
-
-    const getDeletedEvent = await request(app).get(`/api/events/${createdEvent.body.id}`);
-    expect(getDeletedEvent.status).to.equal(404);
-
-    const postDeleteTasks = await request(app)
-      .get('/api/tasks')
-      .query({ event_id: createdEvent.body.id });
-    expect(postDeleteTasks.status).to.equal(200);
-    expect(postDeleteTasks.body).to.deep.equal([]);
+    const tasksList = await request(app).get('/api/tasks');
+    expect(tasksList.status).to.equal(200);
+    expect(tasksList.body).to.deep.equal([]);
   });
 });

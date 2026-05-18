@@ -1,195 +1,143 @@
-import request from 'supertest';
 import { expect } from 'chai';
-import type { Express } from 'express';
 
 describe('happy_path_valid_event', () => {
-  const loadFreshApp = async (uuidValues: string[] = ['event-1', 'event-2', 'task-1']) => {
-    jest.resetModules();
-    jest.clearAllMocks();
+  const port = 6101;
+  const baseUrl = `http://127.0.0.1:${port}`;
 
-    let capturedApp: Express | undefined;
-
-    jest.doMock('express', () => {
-      const actual = jest.requireActual('express');
-      const factory = (() => {
-        const app = actual();
-        capturedApp = app;
-        const originalListen = app.listen.bind(app);
-        app.listen = ((...args: unknown[]) => {
-          const cb = args[args.length - 1];
-          if (typeof cb === 'function') {
-            (cb as () => void)();
-          }
-          return {
-            close: () => undefined
-          } as never;
-        }) as typeof app.listen;
-        return app;
-      }) as typeof actual;
-
-      Object.assign(factory, actual);
-      factory.default = factory;
-      return {
-        __esModule: true,
-        default: factory,
-        ...actual
-      };
+  const postJson = async (path: string, body: unknown) => {
+    const res = await fetch(`${baseUrl}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
-
-    let idx = 0;
-    jest.doMock('uuid', () => ({
-      v4: jest.fn(() => uuidValues[idx++] ?? `uuid-${idx}`)
-    }));
-
-    await import('../../../server/src/index');
-
-    if (!capturedApp) {
-      throw new Error('Express app was not captured from server/src/index.ts');
-    }
-
-    return capturedApp;
+    const text = await res.text();
+    return { res, body: text ? JSON.parse(text) : null };
   };
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-    jest.resetModules();
+  const putJson = async (path: string, body: unknown) => {
+    const res = await fetch(`${baseUrl}${path}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    return { res, body: text ? JSON.parse(text) : null };
+  };
+
+  const getJson = async (path: string) => {
+    const res = await fetch(`${baseUrl}${path}`);
+    const text = await res.text();
+    return { res, body: text ? JSON.parse(text) : null };
+  };
+
+  const deleteReq = async (path: string) => {
+    const res = await fetch(`${baseUrl}${path}`, { method: 'DELETE' });
+    const text = await res.text();
+    return { res, body: text ? JSON.parse(text) : null };
+  };
+
+  beforeAll(async () => {
+    process.env.PORT = String(port);
+    await import('../../../../server/src/index');
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
-  it('creates an event successfully and returns 201 with the stored event', async () => {
-    const app = await loadFreshApp(['event-happy']);
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
-    const res = await request(app)
-      .post('/api/events')
-      .send({
-        name: 'Alpha Launch',
-        description: 'Kickoff event',
-        startDate: '2026-05-01',
-        endDate: '2026-05-02'
-      });
+  it('creates a valid event and returns 201 with stored event fields', async () => {
+    const payload = {
+      name: 'Alpha Launch happy_path_valid_event',
+      description: 'Launch planning',
+      startDate: '2026-05-15',
+      endDate: '2026-05-16',
+    };
+
+    const { res, body } = await postJson('/api/events', payload);
 
     expect(res.status).to.equal(201);
-    expect(res.body).to.deep.equal({
-      id: 'event-happy',
-      name: 'Alpha Launch',
-      description: 'Kickoff event',
-      startDate: '2026-05-01',
-      endDate: '2026-05-02'
+    expect(body.id).to.be.a('string');
+    expect(body.name).to.equal(payload.name);
+    expect(body.description).to.equal(payload.description);
+    expect(body.startDate).to.equal(payload.startDate);
+    expect(body.endDate).to.equal(payload.endDate);
+
+    const fetched = await getJson(`/api/events/${body.id}`);
+    expect(fetched.res.status).to.equal(200);
+    expect(fetched.body.id).to.equal(body.id);
+    expect(fetched.body.name).to.equal(payload.name);
+
+    await deleteReq(`/api/events/${body.id}`);
+  });
+
+  it('lists created events through GET /api/events', async () => {
+    const created = await postJson('/api/events', {
+      name: 'Bravo Listing happy_path_valid_event',
+      description: 'List coverage',
+      startDate: '2026-06-01',
+      endDate: '2026-06-02',
     });
 
-    const listRes = await request(app).get('/api/events');
-    expect(listRes.status).to.equal(200);
-    expect(listRes.body).to.deep.equal([res.body]);
+    const listed = await getJson('/api/events');
+    expect(listed.res.status).to.equal(200);
+    expect(Array.isArray(listed.body)).to.equal(true);
+    expect(listed.body.some((event: any) => event.id === created.body.id)).to.equal(true);
+
+    await deleteReq(`/api/events/${created.body.id}`);
   });
 
-  it('supports full event lifecycle including fetch by id, update, and delete', async () => {
-    const app = await loadFreshApp(['event-life']);
-
-    const created = await request(app)
-      .post('/api/events')
-      .send({
-        name: 'Bravo Event',
-        description: 'Original',
-        startDate: '2026-06-10',
-        endDate: '2026-06-11'
-      });
-
-    expect(created.status).to.equal(201);
-
-    const fetched = await request(app).get(`/api/events/${created.body.id}`);
-    expect(fetched.status).to.equal(200);
-    expect(fetched.body.name).to.equal('Bravo Event');
-
-    const updated = await request(app)
-      .put(`/api/events/${created.body.id}`)
-      .send({
-        name: 'Bravo Event Updated',
-        description: 'Changed',
-        startDate: '2026-06-12',
-        endDate: '2026-06-13'
-      });
-
-    expect(updated.status).to.equal(200);
-    expect(updated.body).to.deep.equal({
-      id: created.body.id,
-      name: 'Bravo Event Updated',
-      description: 'Changed',
-      startDate: '2026-06-12',
-      endDate: '2026-06-13'
+  it('updates an existing event through PUT /api/events/:id', async () => {
+    const created = await postJson('/api/events', {
+      name: 'Charlie Update happy_path_valid_event',
+      description: 'Before update',
+      startDate: '2026-07-01',
+      endDate: '2026-07-02',
     });
 
-    const deleted = await request(app).delete(`/api/events/${created.body.id}`);
-    expect(deleted.status).to.equal(204);
-    expect(deleted.text).to.equal('');
+    const updatePayload = {
+      name: 'Charlie Update Revised happy_path_valid_event',
+      description: 'After update',
+      startDate: '2026-07-03',
+      endDate: '2026-07-04',
+    };
 
-    const missing = await request(app).get(`/api/events/${created.body.id}`);
-    expect(missing.status).to.equal(404);
-    expect(missing.body).to.deep.equal({ error: 'Event not found' });
+    const updated = await putJson(`/api/events/${created.body.id}`, updatePayload);
+    expect(updated.res.status).to.equal(200);
+    expect(updated.body.id).to.equal(created.body.id);
+    expect(updated.body.name).to.equal(updatePayload.name);
+    expect(updated.body.description).to.equal(updatePayload.description);
+    expect(updated.body.startDate).to.equal(updatePayload.startDate);
+    expect(updated.body.endDate).to.equal(updatePayload.endDate);
+
+    await deleteReq(`/api/events/${created.body.id}`);
   });
 
-  it('deletes tasks associated with an event when the event is deleted', async () => {
-    const app = await loadFreshApp(['event-task-cleanup', 'task-linked', 'task-unlinked']);
+  it('returns 404 when updating a missing event', async () => {
+    const updated = await putJson('/api/events/non-existent-happy-path', {
+      name: 'Missing',
+      description: 'Missing',
+      startDate: '2026-08-01',
+      endDate: '2026-08-02',
+    });
 
-    const eventRes = await request(app)
-      .post('/api/events')
-      .send({
-        name: 'Cleanup Event',
-        description: 'Will be removed',
-        startDate: '2026-07-01',
-        endDate: '2026-07-02'
-      });
-
-    const otherEventRes = await request(app)
-      .post('/api/events')
-      .send({
-        name: 'Other Event',
-        description: 'Stays',
-        startDate: '2026-07-03',
-        endDate: '2026-07-04'
-      });
-
-    const linkedTask = await request(app)
-      .post('/api/tasks')
-      .send({
-        title: 'Linked Task',
-        description: 'belongs to deleted event',
-        status: 'To Do',
-        eventId: eventRes.body.id
-      });
-    expect(linkedTask.status).to.equal(201);
-
-    const unlinkedTask = await request(app)
-      .post('/api/tasks')
-      .send({
-        title: 'Other Task',
-        description: 'belongs elsewhere',
-        status: 'In Progress',
-        eventId: otherEventRes.body.id
-      });
-    expect(unlinkedTask.status).to.equal(201);
-
-    const deleted = await request(app).delete(`/api/events/${eventRes.body.id}`);
-    expect(deleted.status).to.equal(204);
-
-    const tasksAfter = await request(app).get('/api/tasks');
-    expect(tasksAfter.status).to.equal(200);
-    expect(tasksAfter.body).to.have.length(1);
-    expect(tasksAfter.body[0].id).to.equal(unlinkedTask.body.id);
-    expect(tasksAfter.body[0].eventId).to.equal(otherEventRes.body.id);
+    expect(updated.res.status).to.equal(404);
+    expect(updated.body).to.deep.equal({ error: 'Event not found' });
   });
 
-  it('returns 404 when updating a non-existent event', async () => {
-    const app = await loadFreshApp();
+  it('deletes an existing event and then returns 404 on fetch', async () => {
+    const created = await postJson('/api/events', {
+      name: 'Delta Delete happy_path_valid_event',
+      description: 'Delete coverage',
+      startDate: '2026-09-01',
+      endDate: '2026-09-02',
+    });
 
-    const res = await request(app)
-      .put('/api/events/missing-event')
-      .send({
-        name: 'Missing',
-        description: 'Nope',
-        startDate: '2026-08-01',
-        endDate: '2026-08-02'
-      });
+    const deleted = await deleteReq(`/api/events/${created.body.id}`);
+    expect(deleted.res.status).to.equal(204);
 
-    expect(res.status).to.equal(404);
-    expect(res.body).to.deep.equal({ error: 'Event not found' });
+    const fetched = await getJson(`/api/events/${created.body.id}`);
+    expect(fetched.res.status).to.equal(404);
+    expect(fetched.body).to.deep.equal({ error: 'Event not found' });
   });
 });

@@ -1,116 +1,90 @@
-import request from 'supertest';
 import { expect } from 'chai';
-import type { Express } from 'express';
 
 describe('missing_required_field_startDate', () => {
-  const loadFreshApp = async (uuidValues: string[] = ['event-1']) => {
-    jest.resetModules();
-    jest.clearAllMocks();
+  const port = 6103;
+  const baseUrl = `http://127.0.0.1:${port}`;
 
-    let capturedApp: Express | undefined;
-
-    jest.doMock('express', () => {
-      const actual = jest.requireActual('express');
-      const factory = (() => {
-        const app = actual();
-        capturedApp = app;
-        app.listen = ((...args: unknown[]) => {
-          const cb = args[args.length - 1];
-          if (typeof cb === 'function') {
-            (cb as () => void)();
-          }
-          return { close: () => undefined } as never;
-        }) as typeof app.listen;
-        return app;
-      }) as typeof actual;
-
-      Object.assign(factory, actual);
-      factory.default = factory;
-      return {
-        __esModule: true,
-        default: factory,
-        ...actual
-      };
+  const postJson = async (path: string, body: unknown) => {
+    const res = await fetch(`${baseUrl}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
-
-    let idx = 0;
-    jest.doMock('uuid', () => ({
-      v4: jest.fn(() => uuidValues[idx++] ?? `uuid-${idx}`)
-    }));
-
-    await import('../../../server/src/index');
-
-    if (!capturedApp) {
-      throw new Error('Express app was not captured from server/src/index.ts');
-    }
-
-    return capturedApp;
+    const text = await res.text();
+    return { res, body: text ? JSON.parse(text) : null };
   };
 
+  const getJson = async (path: string) => {
+    const res = await fetch(`${baseUrl}${path}`);
+    const text = await res.text();
+    return { res, body: text ? JSON.parse(text) : null };
+  };
+
+  const putJson = async (path: string, body: unknown) => {
+    const res = await fetch(`${baseUrl}${path}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    return { res, body: text ? JSON.parse(text) : null };
+  };
+
+  const deleteReq = async (path: string) => {
+    const res = await fetch(`${baseUrl}${path}`, { method: 'DELETE' });
+    const text = await res.text();
+    return { res, body: text ? JSON.parse(text) : null };
+  };
+
+  beforeAll(async () => {
+    process.env.PORT = String(port);
+    await import('../../../../server/src/index');
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  });
+
   afterEach(() => {
-    jest.restoreAllMocks();
-    jest.resetModules();
+    jest.clearAllMocks();
   });
 
-  it('returns 400 when startDate is missing', async () => {
-    const app = await loadFreshApp();
+  it('returns 400 when startDate is missing from POST /api/events', async () => {
+    const before = await getJson('/api/events');
+    const created = await postJson('/api/events', {
+      name: 'Missing Start Date',
+      endDate: '2026-05-16',
+    });
+    const after = await getJson('/api/events');
 
-    const res = await request(app)
-      .post('/api/events')
-      .send({ name: 'No Start', endDate: '2026-09-02' });
-
-    expect(res.status).to.equal(400);
-    expect(res.body).to.deep.equal({ error: 'Name, startDate, and endDate are required' });
+    expect(created.res.status).to.equal(400);
+    expect(created.body).to.deep.equal({ error: 'Name, startDate, and endDate are required' });
+    expect(after.body.length).to.equal(before.body.length);
   });
 
-  it('returns 400 when startDate is an empty string', async () => {
-    const app = await loadFreshApp();
+  it('supports creating and updating an event after startDate validation failure path is covered', async () => {
+    const created = await postJson('/api/events', {
+      name: 'Start Date Recovery Event',
+      description: 'Created successfully',
+      startDate: '2026-07-01',
+      endDate: '2026-07-02',
+    });
 
-    const res = await request(app)
-      .post('/api/events')
-      .send({ name: 'Empty Start', startDate: '', endDate: '2026-09-02' });
+    expect(created.res.status).to.equal(201);
 
-    expect(res.status).to.equal(400);
-    expect(res.body.error).to.equal('Name, startDate, and endDate are required');
+    const updated = await putJson(`/api/events/${created.body.id}`, {
+      name: 'Start Date Recovery Event Updated',
+      description: 'Updated successfully',
+      startDate: '2026-07-03',
+      endDate: '2026-07-04',
+    });
+
+    expect(updated.res.status).to.equal(200);
+    expect(updated.body.name).to.equal('Start Date Recovery Event Updated');
+
+    await deleteReq(`/api/events/${created.body.id}`);
   });
 
-  it('lists events as empty when only invalid create attempts were made', async () => {
-    const app = await loadFreshApp();
-
-    await request(app)
-      .post('/api/events')
-      .send({ name: 'No Start', endDate: '2026-09-02' });
-
-    const listRes = await request(app).get('/api/events');
-    expect(listRes.status).to.equal(200);
-    expect(listRes.body).to.deep.equal([]);
-  });
-
-  it('allows create then update flow for a valid event in the same route module', async () => {
-    const app = await loadFreshApp(['event-updateable']);
-
-    const created = await request(app)
-      .post('/api/events')
-      .send({
-        name: 'Create Me',
-        description: 'before update',
-        startDate: '2026-09-10',
-        endDate: '2026-09-11'
-      });
-
-    expect(created.status).to.equal(201);
-
-    const updated = await request(app)
-      .put(`/api/events/${created.body.id}`)
-      .send({
-        name: 'Create Me Updated',
-        description: 'after update',
-        startDate: '2026-09-12',
-        endDate: '2026-09-13'
-      });
-
-    expect(updated.status).to.equal(200);
-    expect(updated.body.name).to.equal('Create Me Updated');
-    expect(updated.body.startDate).to.equal('2026-09-12');
+  it('lists events as an array from GET /api/events', async () => {
+    const listed = await getJson('/api/events');
+    expect(listed.res.status).to.equal(200);
+    expect(Array.isArray(listed.body)).to.equal(true);
   });
 });

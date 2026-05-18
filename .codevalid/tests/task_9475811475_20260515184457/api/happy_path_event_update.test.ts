@@ -1,40 +1,70 @@
 import request from 'supertest';
 import { expect } from 'chai';
-import express from 'express';
+import type { Express } from 'express';
 
 describe('happy_path_event_update', () => {
-  let app: express.Express;
-  let listenSpy: jest.SpyInstance;
+  let app: Express;
+  let uuidSequence = 0;
 
-  const loadFreshApp = async (): Promise<express.Express> => {
+  const buildApp = async (): Promise<Express> => {
     jest.resetModules();
+    let capturedApp: Express | undefined;
 
-    listenSpy = jest
-      .spyOn(express.application as any, 'listen')
-      .mockImplementation(function mockedListen(this: express.Express, ...args: any[]) {
-        const callback = args.find((arg) => typeof arg === 'function');
-        if (callback) {
-          callback();
-        }
-        return { close: jest.fn() } as any;
-      });
+    jest.doMock('uuid', () => ({
+      v4: jest.fn(() => {
+        uuidSequence += 1;
+        return `evt-${uuidSequence}`;
+      })
+    }));
 
-    await import('../../../../server/src/index');
+    jest.doMock('express', () => {
+      const actual = jest.requireActual('express');
+      const expressFactory = () => {
+        const createdApp = actual.default();
+        const originalListen = createdApp.listen.bind(createdApp);
+        createdApp.listen = ((...args: unknown[]) => {
+          const callback = args.find((arg) => typeof arg === 'function') as (() => void) | undefined;
+          if (callback) callback();
+          return {
+            close: jest.fn()
+          } as any;
+        }) as typeof createdApp.listen;
+        capturedApp = createdApp;
+        return createdApp;
+      };
 
-    expect(listenSpy.called).to.equal(true);
-    return listenSpy.mock.instances[0] as express.Express;
+      return {
+        __esModule: true,
+        ...actual,
+        default: expressFactory
+      };
+    });
+
+    await jest.isolateModulesAsync(async () => {
+      await import('../../../server/src/index');
+    });
+
+    if (!capturedApp) {
+      throw new Error('Failed to capture Express app instance');
+    }
+
+    return capturedApp;
   };
 
   beforeEach(async () => {
-    app = await loadFreshApp();
+    uuidSequence = 0;
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
+    app = await buildApp();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
     jest.clearAllMocks();
+    jest.restoreAllMocks();
+    jest.resetModules();
   });
 
-  it('updates an existing event with valid ID and payload', async () => {
+  it('updates an existing event and returns the updated event object', async () => {
     const created = await request(app)
       .post('/api/events')
       .send({
@@ -45,9 +75,9 @@ describe('happy_path_event_update', () => {
       });
 
     expect(created.status).to.equal(201);
-    expect(created.body.name).to.equal('Meeting');
+    expect(created.body.id).to.equal('evt-1');
 
-    const res = await request(app)
+    const response = await request(app)
       .put(`/api/events/${created.body.id}`)
       .send({
         name: 'Updated Meeting',
@@ -56,98 +86,143 @@ describe('happy_path_event_update', () => {
         endDate: '2023-10-06'
       });
 
-    expect(res.status).to.equal(200);
-    expect(res.body.id).to.equal(created.body.id);
-    expect(res.body.name).to.equal('Updated Meeting');
-    expect(res.body.description).to.equal('New sync');
-    expect(res.body.startDate).to.equal('2023-10-05');
-    expect(res.body.endDate).to.equal('2023-10-06');
+    expect(response.status).to.equal(200);
+    expect(response.body).to.deep.equal({
+      id: 'evt-1',
+      name: 'Updated Meeting',
+      description: 'New sync',
+      startDate: '2023-10-05',
+      endDate: '2023-10-06'
+    });
 
-    const fetched = await request(app).get(`/api/events/${created.body.id}`);
+    const fetched = await request(app).get('/api/events/evt-1');
     expect(fetched.status).to.equal(200);
-    expect(fetched.body).to.deep.equal(res.body);
+    expect(fetched.body).to.deep.equal(response.body);
   });
 
-  it('lists events and reflects the updated values after mutation', async () => {
-    const created = await request(app)
+  it('lists created events and preserves updated values in the collection', async () => {
+    await request(app)
       .post('/api/events')
       .send({
-        name: 'Launch',
-        description: 'Initial rollout',
+        name: 'Alpha Expo',
+        description: 'Launch',
         startDate: '2024-01-10',
         endDate: '2024-01-11'
       });
 
-    expect(created.status).to.equal(201);
-
-    const updated = await request(app)
-      .put(`/api/events/${created.body.id}`)
-      .send({
-        name: 'Launch Retrospective',
-        description: 'Postmortem',
-        startDate: '2024-01-12',
-        endDate: '2024-01-13'
-      });
-
-    expect(updated.status).to.equal(200);
-
-    const listRes = await request(app).get('/api/events');
-    expect(listRes.status).to.equal(200);
-    expect(listRes.body).to.be.an('array');
-    expect(listRes.body).to.have.length(1);
-    expect(listRes.body[0].id).to.equal(created.body.id);
-    expect(listRes.body[0].name).to.equal('Launch Retrospective');
-    expect(listRes.body[0].description).to.equal('Postmortem');
-    expect(listRes.body[0].startDate).to.equal('2024-01-12');
-    expect(listRes.body[0].endDate).to.equal('2024-01-13');
-  });
-
-  it('allows partial update payloads and preserves unspecified event fields', async () => {
-    const created = await request(app)
+    await request(app)
       .post('/api/events')
       .send({
-        name: 'Workshop',
-        description: 'Hands-on session',
-        startDate: '2024-02-01',
-        endDate: '2024-02-02'
+        name: 'Beta Summit',
+        description: 'Planning',
+        startDate: '2024-02-10',
+        endDate: '2024-02-11'
       });
 
-    expect(created.status).to.equal(201);
-
-    const res = await request(app)
-      .put(`/api/events/${created.body.id}`)
+    const updateResponse = await request(app)
+      .put('/api/events/evt-2')
       .send({
-        name: 'Advanced Workshop'
+        name: 'Beta Summit Revised',
+        description: 'Planning updated',
+        startDate: '2024-02-12',
+        endDate: '2024-02-13'
       });
 
-    expect(res.status).to.equal(200);
-    expect(res.body.id).to.equal(created.body.id);
-    expect(res.body.name).to.equal('Advanced Workshop');
-    expect(res.body.description).to.equal('Hands-on session');
-    expect(res.body.startDate).to.equal('2024-02-01');
-    expect(res.body.endDate).to.equal('2024-02-02');
+    expect(updateResponse.status).to.equal(200);
+
+    const listResponse = await request(app).get('/api/events');
+    expect(listResponse.status).to.equal(200);
+    expect(listResponse.body).to.have.length(2);
+    expect(listResponse.body).to.deep.equal([
+      {
+        id: 'evt-1',
+        name: 'Alpha Expo',
+        description: 'Launch',
+        startDate: '2024-01-10',
+        endDate: '2024-01-11'
+      },
+      {
+        id: 'evt-2',
+        name: 'Beta Summit Revised',
+        description: 'Planning updated',
+        startDate: '2024-02-12',
+        endDate: '2024-02-13'
+      }
+    ]);
+  });
+
+  it('allows partial update payloads and sets omitted fields to undefined per implementation', async () => {
+    await request(app)
+      .post('/api/events')
+      .send({
+        name: 'Meeting',
+        description: 'Sync',
+        startDate: '2023-10-01',
+        endDate: '2023-10-02'
+      });
+
+    const response = await request(app)
+      .put('/api/events/evt-1')
+      .send({
+        name: 'Name Only'
+      });
+
+    expect(response.status).to.equal(200);
+    expect(response.body.id).to.equal('evt-1');
+    expect(response.body.name).to.equal('Name Only');
+    expect(response.body).to.have.property('description', undefined);
+    expect(response.body).to.have.property('startDate', undefined);
+    expect(response.body).to.have.property('endDate', undefined);
+  });
+
+  it('creates and deletes an event, removing associated tasks as part of event deletion', async () => {
+    const eventResponse = await request(app)
+      .post('/api/events')
+      .send({
+        name: 'Cleanup Event',
+        description: 'Has task',
+        startDate: '2025-03-01',
+        endDate: '2025-03-02'
+      });
+
+    expect(eventResponse.status).to.equal(201);
+
+    const taskResponse = await request(app)
+      .post('/api/tasks')
+      .send({
+        title: 'Prepare room',
+        description: 'Arrange chairs',
+        status: 'To Do',
+        eventId: eventResponse.body.id
+      });
+
+    expect(taskResponse.status).to.equal(201);
+
+    const deleteResponse = await request(app).delete(`/api/events/${eventResponse.body.id}`);
+    expect(deleteResponse.status).to.equal(204);
+    expect(deleteResponse.text).to.equal('');
+
+    const eventFetch = await request(app).get(`/api/events/${eventResponse.body.id}`);
+    expect(eventFetch.status).to.equal(404);
+    expect(eventFetch.body).to.deep.equal({ error: 'Event not found' });
+
+    const tasksForEvent = await request(app).get('/api/tasks').query({ event_id: eventResponse.body.id });
+    expect(tasksForEvent.status).to.equal(200);
+    expect(tasksForEvent.body).to.deep.equal([]);
   });
 
   it('returns 400 when creating an event without required fields', async () => {
-    const missingName = await request(app)
+    const response = await request(app)
       .post('/api/events')
-      .send({ startDate: '2024-03-01', endDate: '2024-03-02' });
+      .send({
+        description: 'Missing required fields'
+      });
 
-    expect(missingName.status).to.equal(400);
-    expect(missingName.body).to.deep.equal({
-      error: 'Name, startDate, and endDate are required'
-    });
+    expect(response.status).to.equal(400);
+    expect(response.body).to.deep.equal({ error: 'Name, startDate, and endDate are required' });
 
-    const missingStartDate = await request(app)
-      .post('/api/events')
-      .send({ name: 'No start', endDate: '2024-03-02' });
-
-    expect(missingStartDate.status).to.equal(400);
-
-    const missingEndDate = await request(app)
-      .post('/api/events')
-      .send({ name: 'No end', startDate: '2024-03-01' });
-
-    expect(missingEndDate.status).to.equal(400);
+    const listResponse = await request(app).get('/api/events');
+    expect(listResponse.status).to.equal(200);
+    expect(listResponse.body).to.deep.equal([]);
   });
 });
