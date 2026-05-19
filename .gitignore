@@ -1,0 +1,9 @@
+
+# CodeValid — auto-added
+node_modules/
+dist/
+build/
+coverage/
+.next/
+out/
+.turbo/
