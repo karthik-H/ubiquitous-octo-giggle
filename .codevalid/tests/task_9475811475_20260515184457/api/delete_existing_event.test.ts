@@ -36,7 +36,6 @@ jest.mock('express', () => {
   const actual = jest.requireActual('express');
   return {
     __esModule: true,
-    ...actual,
     default: expressMock,
   };
 });
@@ -58,7 +57,10 @@ jest.mock('uuid', () => ({
   v4: mockUuidV4,
 }));
 
-import { expect } from 'chai';
+import { expect as chaiExpect } from 'chai';
+
+// Jest's global expect is available for mock assertions
+declare const expect: any;
 
 type RouteHandler = (req: any, res: any) => any;
 
@@ -111,7 +113,7 @@ const loadServer = async () => {
     .mockReturnValueOnce('task-2')
     .mockReturnValue('generated-id');
 
-  await import('../../../server/src/index');
+  await import('../../../../server/src/index');
 
   const getHandler = (method: string, path: string): RouteHandler => {
     const route = registeredRoutes.find(r => r.method === method && r.path === path);
@@ -153,8 +155,8 @@ describe('delete_existing_event', () => {
       createEventRes,
     );
 
-    expect(createEventRes.statusCode).to.equal(201);
-    expect(createEventRes.body.id).to.equal('evt-1');
+    chaiExpect(createEventRes.statusCode).to.equal(201);
+    chaiExpect(createEventRes.body.id).to.equal('evt-1');
 
     const createTaskRes = buildResponse();
     createTask(
@@ -169,24 +171,24 @@ describe('delete_existing_event', () => {
       createTaskRes,
     );
 
-    expect(createTaskRes.statusCode).to.equal(201);
-    expect(createTaskRes.body.eventId).to.equal('evt-1');
+    chaiExpect(createTaskRes.statusCode).to.equal(201);
+    chaiExpect(createTaskRes.body.eventId).to.equal('evt-1');
 
-    const deleteRes = buildResponse();
-    deleteEvent({ params: { id: 'evt-1' } }, deleteRes);
+     const deleteRes = buildResponse();
+     deleteEvent({ params: { id: 'evt-1' } }, deleteRes);
 
-    expect(deleteRes.status).to.have.been.calledWith(204);
-    expect(deleteRes.send).to.have.been.calledOnce;
+     expect(deleteRes.status).toHaveBeenCalledWith(204);
+     expect(deleteRes.send).toHaveBeenCalledTimes(1);
 
     const listEventsRes = buildResponse();
     listEvents({ query: {} }, listEventsRes);
-    expect(listEventsRes.statusCode).to.equal(200);
-    expect(listEventsRes.body).to.deep.equal([]);
+    chaiExpect(listEventsRes.statusCode).to.equal(200);
+    chaiExpect(listEventsRes.body).to.deep.equal([]);
 
     const listTasksRes = buildResponse();
     listTasks({ query: {} }, listTasksRes);
-    expect(listTasksRes.statusCode).to.equal(200);
-    expect(listTasksRes.body).to.deep.equal([]);
+    chaiExpect(listTasksRes.statusCode).to.equal(200);
+    chaiExpect(listTasksRes.body).to.deep.equal([]);
   });
 
   it('POST /api/events creates and GET /api/events/:id retrieves the stored event', async () => {
@@ -209,8 +211,8 @@ describe('delete_existing_event', () => {
       createRes,
     );
 
-    expect(createRes.statusCode).to.equal(201);
-    expect(createRes.body).to.include({
+    chaiExpect(createRes.statusCode).to.equal(201);
+    chaiExpect(createRes.body).to.include({
       id: 'evt-1',
       name: 'Alpha Summit',
       description: 'Annual summit',
@@ -220,13 +222,13 @@ describe('delete_existing_event', () => {
 
     const getRes = buildResponse();
     getEvent({ params: { id: 'evt-1' } }, getRes);
-    expect(getRes.statusCode).to.equal(200);
-    expect(getRes.body.name).to.equal('Alpha Summit');
+    chaiExpect(getRes.statusCode).to.equal(200);
+    chaiExpect(getRes.body.name).to.equal('Alpha Summit');
 
     const listRes = buildResponse();
     listEvents({ query: {} }, listRes);
-    expect(listRes.body).to.have.length(1);
-    expect(listRes.body[0].id).to.equal('evt-1');
+    chaiExpect(listRes.body).to.have.length(1);
+    chaiExpect(listRes.body[0].id).to.equal('evt-1');
   });
 
   it('POST /api/events validates required fields with 400', async () => {
@@ -243,12 +245,12 @@ describe('delete_existing_event', () => {
           startDate: '',
           endDate: '2026-07-01',
         },
-      },
-      res,
-    );
+       },
+       res,
+     );
 
-    expect(res.status).to.have.been.calledWith(400);
-    expect(res.body).to.deep.equal({ error: 'Name, startDate, and endDate are required' });
+     expect(res.status).toHaveBeenCalledWith(400);
+     chaiExpect(res.body).to.deep.equal({ error: 'Name, startDate, and endDate are required' });
   });
 
   it('PUT /api/events/:id updates an existing event', async () => {
@@ -284,8 +286,8 @@ describe('delete_existing_event', () => {
       updateRes,
     );
 
-    expect(updateRes.statusCode).to.equal(200);
-    expect(updateRes.body).to.include({
+    chaiExpect(updateRes.statusCode).to.equal(200);
+    chaiExpect(updateRes.body).to.include({
       id: 'evt-1',
       name: 'Beta Conference',
       description: 'Updated description',
@@ -295,7 +297,7 @@ describe('delete_existing_event', () => {
 
     const getRes = buildResponse();
     getEvent({ params: { id: 'evt-1' } }, getRes);
-    expect(getRes.body.name).to.equal('Beta Conference');
+    chaiExpect(getRes.body.name).to.equal('Beta Conference');
   });
 
   it('PUT /api/events/:id returns 404 for a missing event', async () => {
@@ -313,12 +315,12 @@ describe('delete_existing_event', () => {
           startDate: '2026-09-01',
           endDate: '2026-09-02',
         },
-      },
-      res,
-    );
+       },
+       res,
+     );
 
-    expect(res.status).to.have.been.calledWith(404);
-    expect(res.body).to.deep.equal({ error: 'Event not found' });
+     expect(res.status).toHaveBeenCalledWith(404);
+     chaiExpect(res.body).to.deep.equal({ error: 'Event not found' });
   });
 
   it('POST /api/tasks validates required fields and event existence', async () => {
@@ -335,12 +337,12 @@ describe('delete_existing_event', () => {
           status: '',
           eventId: '',
         },
-      },
-      missingFieldsRes,
-    );
+       },
+       missingFieldsRes,
+     );
 
-    expect(missingFieldsRes.status).to.have.been.calledWith(400);
-    expect(missingFieldsRes.body).to.deep.equal({ error: 'Title, status, and eventId are required' });
+     expect(missingFieldsRes.status).toHaveBeenCalledWith(400);
+     chaiExpect(missingFieldsRes.body).to.deep.equal({ error: 'Title, status, and eventId are required' });
 
     const unknownEventRes = buildResponse();
     createTask(
@@ -351,12 +353,12 @@ describe('delete_existing_event', () => {
           status: 'To Do',
           eventId: 'evt-missing',
         },
-      },
-      unknownEventRes,
-    );
+       },
+       unknownEventRes,
+     );
 
-    expect(unknownEventRes.status).to.have.been.calledWith(400);
-    expect(unknownEventRes.body).to.deep.equal({ error: 'Associated event not found' });
+     expect(unknownEventRes.status).toHaveBeenCalledWith(400);
+     chaiExpect(unknownEventRes.body).to.deep.equal({ error: 'Associated event not found' });
   });
 
   it('PUT /api/tasks/:id updates a task and rejects changing to a missing event', async () => {
@@ -405,9 +407,9 @@ describe('delete_existing_event', () => {
       updateOkRes,
     );
 
-    expect(updateOkRes.statusCode).to.equal(200);
-    expect(updateOkRes.body.title).to.equal('Arrange booths and seating');
-    expect(updateOkRes.body.status).to.equal('In Progress');
+    chaiExpect(updateOkRes.statusCode).to.equal(200);
+    chaiExpect(updateOkRes.body.title).to.equal('Arrange booths and seating');
+    chaiExpect(updateOkRes.body.status).to.equal('In Progress');
 
     const invalidMoveRes = buildResponse();
     updateTask(
@@ -419,17 +421,17 @@ describe('delete_existing_event', () => {
           status: 'Completed',
           eventId: 'evt-999',
         },
-      },
-      invalidMoveRes,
-    );
+       },
+       invalidMoveRes,
+     );
 
-    expect(invalidMoveRes.status).to.have.been.calledWith(400);
-    expect(invalidMoveRes.body).to.deep.equal({ error: 'Associated event not found' });
+     expect(invalidMoveRes.status).toHaveBeenCalledWith(400);
+     chaiExpect(invalidMoveRes.body).to.deep.equal({ error: 'Associated event not found' });
 
     const listRes = buildResponse();
     listTasks({ query: { event_id: 'evt-1' } }, listRes);
-    expect(listRes.body).to.have.length(1);
-    expect(listRes.body[0].id).to.equal('task-1');
+    chaiExpect(listRes.body).to.have.length(1);
+    chaiExpect(listRes.body[0].id).to.equal('task-1');
   });
 
   it('DELETE /api/tasks/:id removes a task independently and returns 204', async () => {
@@ -462,14 +464,14 @@ describe('delete_existing_event', () => {
         },
       },
       buildResponse(),
-    );
+     );
 
-    const deleteRes = buildResponse();
-    deleteTask({ params: { id: 'task-1' } }, deleteRes);
-    expect(deleteRes.status).to.have.been.calledWith(204);
+     const deleteRes = buildResponse();
+     deleteTask({ params: { id: 'task-1' } }, deleteRes);
+     expect(deleteRes.status).toHaveBeenCalledWith(204);
 
     const listRes = buildResponse();
     listTasks({ query: {} }, listRes);
-    expect(listRes.body).to.deep.equal([]);
+    chaiExpect(listRes.body).to.deep.equal([]);
   });
 });

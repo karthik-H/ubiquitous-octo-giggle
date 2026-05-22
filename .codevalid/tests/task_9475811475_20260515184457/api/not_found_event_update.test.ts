@@ -38,7 +38,7 @@ describe('not_found_event_update', () => {
 
   const loadFreshApp = () => {
     jest.isolateModules(() => {
-      require('../../../server/src/index');
+      require('../../../../server/src/index');
     });
     app = capturedApps[capturedApps.length - 1];
   };

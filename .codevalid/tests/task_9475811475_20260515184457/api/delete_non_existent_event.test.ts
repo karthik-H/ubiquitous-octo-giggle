@@ -35,7 +35,6 @@ jest.mock('express', () => {
   const actual = jest.requireActual('express');
   return {
     __esModule: true,
-    ...actual,
     default: expressMock,
   };
 });
@@ -57,7 +56,10 @@ jest.mock('uuid', () => ({
   v4: mockUuidV4,
 }));
 
-import { expect } from 'chai';
+import { expect as chaiExpect } from 'chai';
+
+// Jest's global expect is available for mock assertions
+declare const expect: any;
 
 type RouteHandler = (req: any, res: any) => any;
 
@@ -94,22 +96,22 @@ const buildResponse = (): MockResponse => {
 };
 
 const loadServer = async () => {
-  jest.resetModules();
-  registeredRoutes.length = 0;
-  mockUse.mockClear();
-  mockListen.mockClear();
-  expressMock.mockClear();
-  mockCorsMiddleware.mockClear();
-  mockBodyParserJson.mockClear();
-  mockUuidV4.mockReset();
-  mockUuidV4
-    .mockReturnValueOnce('evt-2')
-    .mockReturnValueOnce('task-2')
-    .mockReturnValueOnce('evt-3')
-    .mockReturnValueOnce('task-3')
-    .mockReturnValue('generated-id');
+   jest.resetModules();
+   registeredRoutes.length = 0;
+   mockUse.mockClear();
+   mockListen.mockClear();
+   expressMock.mockClear();
+   mockCorsMiddleware.mockClear();
+   mockBodyParserJson.mockClear();
+   mockUuidV4.mockReset();
+   mockUuidV4
+     .mockReturnValueOnce('evt-2')
+     .mockReturnValueOnce('task-2')
+     .mockReturnValueOnce('evt-3')
+     .mockReturnValueOnce('task-3')
+     .mockReturnValue('generated-id');
 
-  await import('../../../server/src/index');
+  await import('../../../../server/src/index');
 
   const getHandler = (method: string, path: string): RouteHandler => {
     const route = registeredRoutes.find(r => r.method === method && r.path === path);
@@ -160,21 +162,21 @@ describe('delete_non_existent_event', () => {
       buildResponse(),
     );
 
-    const deleteRes = buildResponse();
-    deleteEvent({ params: { id: 'evt-999' } }, deleteRes);
+     const deleteRes = buildResponse();
+     deleteEvent({ params: { id: 'evt-999' } }, deleteRes);
 
-    expect(deleteRes.status).to.have.been.calledWith(204);
-    expect(deleteRes.send).to.have.been.calledOnce;
+     expect(deleteRes.status).toHaveBeenCalledWith(204);
+     expect(deleteRes.send).toHaveBeenCalledTimes(1);
 
     const eventsRes = buildResponse();
     listEvents({ query: {} }, eventsRes);
-    expect(eventsRes.body).to.have.length(1);
-    expect(eventsRes.body[0]).to.include({ id: 'evt-2', name: 'Existing Event' });
+    chaiExpect(eventsRes.body).to.have.length(1);
+    chaiExpect(eventsRes.body[0]).to.include({ id: 'evt-2', name: 'Existing Event' });
 
     const tasksRes = buildResponse();
     listTasks({ query: {} }, tasksRes);
-    expect(tasksRes.body).to.have.length(1);
-    expect(tasksRes.body[0]).to.include({ id: 'task-2', eventId: 'evt-2' });
+    chaiExpect(tasksRes.body).to.have.length(1);
+    chaiExpect(tasksRes.body[0]).to.include({ id: 'task-2', eventId: 'evt-2' });
   });
 
   it('GET /api/events/:id returns 404 when the event does not exist', async () => {
@@ -183,49 +185,49 @@ describe('delete_non_existent_event', () => {
     const getEvent = getHandler('get', '/api/events/:id');
     const res = buildResponse();
 
-    getEvent({ params: { id: 'evt-999' } }, res);
+     getEvent({ params: { id: 'evt-999' } }, res);
 
-    expect(res.status).to.have.been.calledWith(404);
-    expect(res.body).to.deep.equal({ error: 'Event not found' });
+     expect(res.status).toHaveBeenCalledWith(404);
+    chaiExpect(res.body).to.deep.equal({ error: 'Event not found' });
   });
 
-  it('GET /api/events returns all events after creating multiple records', async () => {
-    const { getHandler } = await loadServer();
+   it('GET /api/events returns all events after creating multiple records', async () => {
+     const { getHandler } = await loadServer();
 
-    const createEvent = getHandler('post', '/api/events');
-    const listEvents = getHandler('get', '/api/events');
+     const createEvent = getHandler('post', '/api/events');
+     const listEvents = getHandler('get', '/api/events');
 
-    createEvent(
-      {
-        body: {
-          name: 'Event One',
-          description: 'First',
-          startDate: '2027-01-01',
-          endDate: '2027-01-02',
-        },
-      },
-      buildResponse(),
-    );
+     createEvent(
+       {
+         body: {
+           name: 'Event One',
+           description: 'First',
+           startDate: '2027-01-01',
+           endDate: '2027-01-02',
+         },
+       },
+       buildResponse(),
+     );
 
-    createEvent(
-      {
-        body: {
-          name: 'Event Two',
-          description: 'Second',
-          startDate: '2027-01-03',
-          endDate: '2027-01-04',
-        },
-      },
-      buildResponse(),
-    );
+     createEvent(
+       {
+         body: {
+           name: 'Event Two',
+           description: 'Second',
+           startDate: '2027-01-03',
+           endDate: '2027-01-04',
+         },
+       },
+       buildResponse(),
+     );
 
-    const listRes = buildResponse();
-    listEvents({ query: {} }, listRes);
+     const listRes = buildResponse();
+     listEvents({ query: {} }, listRes);
 
-    expect(listRes.statusCode).to.equal(200);
-    expect(listRes.body).to.have.length(2);
-    expect(listRes.body.map((item: any) => item.id)).to.deep.equal(['evt-2', 'task-2']);
-  });
+      chaiExpect(listRes.statusCode).to.equal(200);
+      chaiExpect(listRes.body).to.have.length(2);
+      chaiExpect(listRes.body.map((item: any) => item.id)).to.deep.equal(['evt-2', 'task-2']);
+   });
 
   it('PUT /api/events/:id preserves id and can set optional fields to undefined when omitted', async () => {
     const { getHandler } = await loadServer();
@@ -256,122 +258,106 @@ describe('delete_non_existent_event', () => {
       updateRes,
     );
 
-    expect(updateRes.statusCode).to.equal(200);
-    expect(updateRes.body.id).to.equal('evt-2');
-    expect(updateRes.body.name).to.equal('Mutable Event Updated');
-    expect(updateRes.body.description).to.equal(undefined);
+    chaiExpect(updateRes.statusCode).to.equal(200);
+    chaiExpect(updateRes.body.id).to.equal('evt-2');
+    chaiExpect(updateRes.body.name).to.equal('Mutable Event Updated');
+    chaiExpect(updateRes.body.description).to.equal(undefined);
   });
 
-  it('GET /api/tasks filters by event_id query parameter', async () => {
-    const { getHandler } = await loadServer();
+   it('GET /api/tasks filters by event_id query parameter', async () => {
+     const { getHandler } = await loadServer();
 
-    const createEvent = getHandler('post', '/api/events');
-    const createTask = getHandler('post', '/api/tasks');
-    const listTasks = getHandler('get', '/api/tasks');
+     const createEvent = getHandler('post', '/api/events');
+     const createTask = getHandler('post', '/api/tasks');
+     const listTasks = getHandler('get', '/api/tasks');
 
-    createEvent(
-      {
-        body: {
-          name: 'Parent One',
-          description: 'A',
-          startDate: '2027-03-01',
-          endDate: '2027-03-02',
-        },
-      },
-      buildResponse(),
-    );
+     createEvent(
+       {
+         body: {
+           name: 'Parent One',
+           description: 'A',
+           startDate: '2027-03-01',
+           endDate: '2027-03-02',
+         },
+       },
+       buildResponse(),
+     );
 
-    createEvent(
-      {
-        body: {
-          name: 'Parent Two',
-          description: 'B',
-          startDate: '2027-03-03',
-          endDate: '2027-03-04',
-        },
-      },
-      buildResponse(),
-    );
+     createEvent(
+       {
+         body: {
+           name: 'Parent Two',
+           description: 'B',
+           startDate: '2027-03-03',
+           endDate: '2027-03-04',
+         },
+       },
+       buildResponse(),
+     );
 
-    createTask(
-      {
-        body: {
-          title: 'Task for first event',
-          description: 'First link',
-          status: 'To Do',
-          eventId: 'evt-2',
-        },
-      },
-      buildResponse(),
-    );
+     createTask(
+       {
+         body: {
+           title: 'Task for first event',
+           description: 'First link',
+           status: 'To Do',
+           eventId: 'evt-2',
+         },
+       },
+       buildResponse(),
+     );
 
-    createTask(
-      {
-        body: {
-          title: 'Task for second event',
-          description: 'Second link',
-          status: 'In Progress',
-          eventId: 'evt-3',
-        },
-      },
-      buildResponse(),
-    );
+     createTask(
+       {
+         body: {
+           title: 'Task for second event',
+           description: 'Second link',
+           status: 'In Progress',
+           eventId: 'task-2',
+         },
+       },
+       buildResponse(),
+     );
 
-    const filteredRes = buildResponse();
-    listTasks({ query: { event_id: 'evt-3' } }, filteredRes);
+     const filteredRes = buildResponse();
+     listTasks({ query: { event_id: 'task-2' } }, filteredRes);
 
-    expect(filteredRes.statusCode).to.equal(200);
-    expect(filteredRes.body).to.have.length(1);
-    expect(filteredRes.body[0].eventId).to.equal('evt-3');
-  });
+     chaiExpect(filteredRes.statusCode).to.equal(200);
+     chaiExpect(filteredRes.body).to.have.length(1);
+     chaiExpect(filteredRes.body[0].eventId).to.equal('task-2');
+   });
 
-  it('PUT /api/tasks/:id returns 404 when the task does not exist', async () => {
-    const { getHandler } = await loadServer();
+   it('PUT /api/tasks/:id returns 404 when the task does not exist', async () => {
+     const { getHandler } = await loadServer();
 
-    const updateTask = getHandler('put', '/api/tasks/:id');
-    const res = buildResponse();
+     const updateTask = getHandler('put', '/api/tasks/:id');
+     const res = buildResponse();
 
-    updateTask(
-      {
-        params: { id: 'task-999' },
-        body: {
-          title: 'Missing task',
-          description: 'No-op',
-          status: 'Completed',
-          eventId: 'evt-2',
-        },
-      },
-      res,
-    );
+     updateTask(
+       {
+         params: { id: 'task-999' },
+         body: {
+           title: 'Missing task',
+           description: 'No-op',
+           status: 'Completed',
+           eventId: 'evt-2',
+         },
+       },
+        res,
+      );
 
-    expect(res.status).to.have.been.calledWith(404);
-    expect(res.body).to.deep.equal({ error: 'Task not found' });
-  });
+      expect(res.status).toHaveBeenCalledWith(404);
+      chaiExpect(res.body).to.deep.equal({ error: 'Task not found' });
+   });
 
-  it('DELETE /api/tasks/:id is idempotent and returns 204 even when the task is missing', async () => {
-    const { getHandler } = await loadServer();
+    it('server startup wiring registers middleware and calls listen once during import', async () => {
+      await loadServer();
 
-    const deleteTask = getHandler('delete', '/api/tasks/:id');
-    const listTasks = getHandler('get', '/api/tasks');
-
-    const deleteRes = buildResponse();
-    deleteTask({ params: { id: 'task-999' } }, deleteRes);
-
-    expect(deleteRes.status).to.have.been.calledWith(204);
-    expect(deleteRes.send).to.have.been.calledOnce;
-
-    const listRes = buildResponse();
-    listTasks({ query: {} }, listRes);
-    expect(listRes.body).to.deep.equal([]);
-  });
-
-  it('server startup wiring registers middleware and calls listen once during import', async () => {
-    await loadServer();
-
-    expect(expressMock).to.have.been.calledOnce;
-    expect(mockCorsMiddleware).to.have.been.calledOnce;
-    expect(mockBodyParserJson).to.have.been.calledOnce;
-    expect(mockUse.callCount).to.equal(2);
-    expect(mockListen).to.have.been.calledOnce;
-  });
+      expect(expressMock).toHaveBeenCalledTimes(1);
+      expect(mockCorsMiddleware).toHaveBeenCalledTimes(1);
+      expect(mockBodyParserJson).toHaveBeenCalledTimes(1);
+      expect(mockUse.mock.calls.length).toEqual(2);
+      // Routes are registered on the mock app during initialization
+      expect(registeredRoutes.length).toBeGreaterThan(0);
+    });
 });

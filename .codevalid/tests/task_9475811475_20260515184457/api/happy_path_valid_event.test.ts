@@ -137,7 +137,7 @@ describe('happy_path_valid_event', () => {
     await postEvent(req, res);
 
     expect(mockUuidV4).to.have.property('mock');
-    expect(mockUuidV4).to.have.property('mock.calls');
+    expect(mockUuidV4.mock.calls).to.be.an('array');
     expect(mockUuidV4.mock.calls.length).to.equal(1);
     expect(res.statusCode).to.equal(201);
     expect(res.body).to.deep.equal({
@@ -154,30 +154,30 @@ describe('happy_path_valid_event', () => {
     expect(listRes.body).to.deep.equal([res.body]);
   });
 
-  it('returns the stored event from GET /api/events/:id after creation', async () => {
-    const routes = loadRoutes();
-    const postEvent = findRoute(routes.post, '/api/events');
-    const getById = findRoute(routes.get, '/api/events/:id');
+   it('returns the stored event from GET /api/events/:id after creation', async () => {
+     const routes = loadRoutes();
+     const postEvent = findRoute(routes.post, '/api/events');
+     const getById = findRoute(routes.get, '/api/events/:id');
 
-    const createRes = createRes();
-    await postEvent(
-      {
-        body: {
-          name: 'Alpha Summit',
-          description: 'Summit details',
-          startDate: '2026-06-01',
-          endDate: '2026-06-02',
-        },
-      },
-      createRes,
-    );
+     const postRes = createRes();
+     await postEvent(
+       {
+         body: {
+           name: 'Alpha Summit',
+           description: 'Summit details',
+           startDate: '2026-06-01',
+           endDate: '2026-06-02',
+         },
+       },
+       postRes,
+     );
 
-    const getRes = createRes();
-    await getById({ params: { id: 'event-uuid-001' } }, getRes);
+     const getRes = createRes();
+     await getById({ params: { id: 'event-uuid-001' } }, getRes);
 
-    expect(getRes.statusCode).to.equal(200);
-    expect(getRes.body).to.deep.equal(createRes.body);
-  });
+     expect(getRes.statusCode).to.equal(200);
+     expect(getRes.body).to.deep.equal(postRes.body);
+   });
 
   it('updates an existing event through PUT /api/events/:id', async () => {
     const routes = loadRoutes();

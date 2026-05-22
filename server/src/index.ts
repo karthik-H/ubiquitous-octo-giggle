@@ -3,7 +3,7 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import { v4 as uuidv4 } from 'uuid';
 
-const app = express();
+export const app = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(cors());
@@ -135,6 +135,9 @@ app.delete('/api/tasks/:id', (req: Request, res: Response) => {
     res.status(204).send();
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+// Only start the server if this module is run directly
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
+}
