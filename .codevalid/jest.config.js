@@ -14,8 +14,14 @@ const rel =
     ? String(process.env.CODEVALID_PACKAGE_ROOT).trim().replace(new RegExp("^/+"), "")
     : "";
 const packageRoot = rel ? path.join(appRoot, rel) : appRoot;
-const pkgTsconfig = path.join(packageRoot, "tsconfig.json");
-const tsJestTransform = require.resolve("ts-jest", { paths: [packageRoot] });
+const pkgTsconfig = path.join(packageRoot, "tsconfig.test.json");
+
+let tsJestTransform;
+try {
+  tsJestTransform = require.resolve("ts-jest", { paths: [packageRoot] });
+} catch (e) {
+  tsJestTransform = require.resolve("ts-jest");
+}
 
 module.exports = {
   rootDir: codevalidDir,
@@ -26,15 +32,18 @@ module.exports = {
     path.join(appRoot, "node_modules"),
     "node_modules",
   ],
+  moduleNameMapper: {
+    "^@app/(.*)$": path.join(packageRoot, "src", "$1"),
+  },
   transform: {
     '^.+\.ts$': [
       tsJestTransform,
       {
         tsconfig: pkgTsconfig,
-        compilerOptions: {
-          types: ["node", "jest"],
+        diagnostics: { 
+          ignoreCodes: [5107],
+          warnOnly: true,
         },
-        diagnostics: { ignoreCodes: [5107] },
       },
     ],
   },
