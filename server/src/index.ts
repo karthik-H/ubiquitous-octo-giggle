@@ -125,7 +125,7 @@ app.put('/api/tasks/:id', (req: Request, res: Response) => {
         }
     }
 
-    tasks[index] = { ...tasks[index], title, description, status, eventId: eventId || tasks[index].eventId };
+    tasks[index] = { ...tasks[index], description, status, eventId: eventId || tasks[index].eventId };
     res.json(tasks[index]);
 });
 
