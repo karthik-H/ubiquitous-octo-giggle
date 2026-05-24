@@ -24,9 +24,12 @@ try {
 }
 
 module.exports = {
-  rootDir: codevalidDir,
+  rootDir: appRoot,
   testEnvironment: "node",
-  testMatch: ["**/*.ts"],
+  testMatch: [
+    "<rootDir>/.codevalid/**/*.test.ts",
+    "<rootDir>/.codevalid/seed_test_cases/**/*.ts",
+  ],
   moduleDirectories: [
     path.join(packageRoot, "node_modules"),
     path.join(appRoot, "node_modules"),
@@ -47,6 +50,11 @@ module.exports = {
       },
     ],
   },
+  collectCoverageFrom: [
+    "<rootDir>/server/src/**/*.{ts,tsx,js,jsx}",
+    "!**/*.d.ts",
+  ],
+  coverageDirectory: path.join(codevalidDir, "coverage"),
   verbose: true,
   silent: false,
 };
