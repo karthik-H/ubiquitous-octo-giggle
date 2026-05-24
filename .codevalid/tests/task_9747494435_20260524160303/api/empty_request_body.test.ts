@@ -4,6 +4,7 @@ import { expect } from 'chai';
 const loadFreshApp = async () => {
   jest.resetModules();
   const mod = await import('../../../../server/src/index');
+  mod.resetState();
   return mod.app;
 };
 

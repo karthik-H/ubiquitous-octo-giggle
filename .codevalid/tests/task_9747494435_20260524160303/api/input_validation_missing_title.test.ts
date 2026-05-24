@@ -1,26 +1,34 @@
-jest.mock('uuid', () => ({
-  v4: jest.fn(),
-}));
-
 import request from 'supertest';
 import { expect } from 'chai';
-import { v4 as uuidv4 } from 'uuid';
-
-const mockUuid = uuidv4 as jest.MockedFunction<typeof uuidv4>;
 
 describe('input_validation_missing_title', () => {
   let app: any;
+  let resetState: any;
+  let mockUuid: any;
 
   beforeEach(async () => {
     jest.resetModules();
     jest.clearAllMocks();
-    mockUuid.mockReset();
-    mockUuid
-      .mockReturnValueOnce('event-validation-id')
-      .mockReturnValueOnce('task-validation-id')
-      .mockReturnValue('fallback-id');
 
-    ({ app } = await import('../../../../server/src/index'));
+    // Set up the mock BEFORE importing the app
+    jest.doMock('uuid', () => ({
+      v4: jest.fn()
+        .mockReturnValueOnce('event-validation-id')
+        .mockReturnValueOnce('task-validation-id')
+        .mockReturnValue('fallback-id'),
+    }));
+
+    const appModule = await import('../../../../server/src/index');
+    app = appModule.app;
+    resetState = appModule.resetState;
+    resetState();
+
+    const { v4: uuidv4 } = await import('uuid');
+    mockUuid = uuidv4 as jest.MockedFunction<typeof uuidv4>;
+  });
+
+  afterEach(() => {
+    jest.unmock('uuid');
   });
 
   it('POST /api/tasks returns 400 when title is missing', async () => {
@@ -84,7 +92,7 @@ describe('input_validation_missing_title', () => {
     expect(response.body).to.deep.equal({
       error: 'Title, status, and eventId are required',
     });
-    expect(mockUuid).to.have.callCount(0);
+    expect(mockUuid.mock.calls).to.have.lengthOf(0);
   });
 
   it('PUT /api/tasks/:id returns 404 when updating a task that does not exist', async () => {

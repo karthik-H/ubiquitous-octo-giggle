@@ -1,27 +1,35 @@
-jest.mock('uuid', () => ({
-  v4: jest.fn(),
-}));
-
 import request from 'supertest';
 import { expect } from 'chai';
-import { v4 as uuidv4 } from 'uuid';
-
-const mockUuid = uuidv4 as jest.MockedFunction<typeof uuidv4>;
 
 describe('response_serialization_correct_structure', () => {
   let app: any;
+  let resetState: any;
+  let mockUuid: any;
 
   beforeEach(async () => {
     jest.resetModules();
     jest.clearAllMocks();
-    mockUuid.mockReset();
-    mockUuid
-      .mockReturnValueOnce('serialized-event-id')
-      .mockReturnValueOnce('serialized-task-id')
-      .mockReturnValueOnce('second-event-id')
-      .mockReturnValue('fallback-id');
 
-    ({ app } = await import('../../../../server/src/index'));
+    // Set up the mock BEFORE importing the app
+    jest.doMock('uuid', () => ({
+      v4: jest.fn()
+        .mockReturnValueOnce('serialized-event-id')
+        .mockReturnValueOnce('serialized-task-id')
+        .mockReturnValueOnce('second-event-id')
+        .mockReturnValue('fallback-id'),
+    }));
+
+    const appModule = await import('../../../../server/src/index');
+    app = appModule.app;
+    resetState = appModule.resetState;
+    resetState();
+
+    const { v4: uuidv4 } = await import('uuid');
+    mockUuid = uuidv4 as jest.MockedFunction<typeof uuidv4>;
+  });
+
+  afterEach(() => {
+    jest.unmock('uuid');
   });
 
   it('POST /api/tasks serializes the created task with id and supplied fields', async () => {

@@ -26,6 +26,7 @@ try {
 module.exports = {
   rootDir: appRoot,
   testEnvironment: "node",
+  testTimeout: 15000,
   testMatch: [
     "<rootDir>/.codevalid/**/*.test.ts",
     "<rootDir>/.codevalid/seed_test_cases/**/*.ts",
@@ -49,7 +50,11 @@ module.exports = {
         },
       },
     ],
+    '^.+\.js$': [tsJestTransform],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)',
+  ],
   collectCoverageFrom: [
     "<rootDir>/server/src/**/*.{ts,tsx,js,jsx}",
     "!**/*.d.ts",

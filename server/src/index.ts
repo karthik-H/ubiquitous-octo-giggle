@@ -30,6 +30,16 @@ interface Task {
 let events: Event[] = [];
 let tasks: Task[] = [];
 
+// Export state reset functions for testing
+export function resetState() {
+    events = [];
+    tasks = [];
+}
+
+export function getState() {
+    return { events, tasks };
+}
+
 // --- Event Routes ---
 
 // List all events
