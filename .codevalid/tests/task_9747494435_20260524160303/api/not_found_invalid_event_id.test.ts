@@ -1,27 +1,35 @@
-jest.mock('uuid', () => ({
-  v4: jest.fn(),
-}));
-
 import request from 'supertest';
 import { expect } from 'chai';
-import { v4 as uuidv4 } from 'uuid';
-
-const mockUuid = uuidv4 as jest.MockedFunction<typeof uuidv4>;
 
 describe('not_found_invalid_event_id', () => {
   let app: any;
+  let resetState: any;
+  let mockUuid: any;
 
   beforeEach(async () => {
     jest.resetModules();
     jest.clearAllMocks();
-    mockUuid.mockReset();
-    mockUuid
-      .mockReturnValueOnce('existing-event-id')
-      .mockReturnValueOnce('created-task-id')
-      .mockReturnValueOnce('replacement-event-id')
-      .mockReturnValue('fallback-id');
 
-    ({ app } = await import('../../../../server/src/index'));
+    // Set up the mock BEFORE importing the app
+    jest.doMock('uuid', () => ({
+      v4: jest.fn()
+        .mockReturnValueOnce('existing-event-id')
+        .mockReturnValueOnce('created-task-id')
+        .mockReturnValueOnce('replacement-event-id')
+        .mockReturnValue('fallback-id'),
+    }));
+
+    const appModule = await import('../../../../server/src/index');
+    app = appModule.app;
+    resetState = appModule.resetState;
+    resetState();
+
+    const { v4: uuidv4 } = await import('uuid');
+    mockUuid = uuidv4 as jest.MockedFunction<typeof uuidv4>;
+  });
+
+  afterEach(() => {
+    jest.unmock('uuid');
   });
 
   it('POST /api/tasks returns 400 when eventId does not reference an existing event', async () => {
@@ -40,7 +48,7 @@ describe('not_found_invalid_event_id', () => {
     const listResponse = await request(app).get('/api/tasks');
     expect(listResponse.status).to.equal(200);
     expect(listResponse.body).to.deep.equal([]);
-    expect(mockUuid).to.have.callCount(0);
+    expect(mockUuid.mock.calls).to.have.lengthOf(0);
   });
 
   it('PUT /api/tasks/:id returns 400 when changing to a non-existent event', async () => {

@@ -1,27 +1,35 @@
-jest.mock('uuid', () => ({
-  v4: jest.fn(),
-}));
-
 import request from 'supertest';
 import { expect } from 'chai';
-import { v4 as uuidv4 } from 'uuid';
-
-const mockUuid = uuidv4 as jest.MockedFunction<typeof uuidv4>;
 
 describe('happy_path_valid_task_creation', () => {
   let app: any;
+  let resetState: any;
+  let mockUuid: any;
 
   beforeEach(async () => {
     jest.resetModules();
     jest.clearAllMocks();
-    mockUuid.mockReset();
-    mockUuid
-      .mockReturnValueOnce('event-seed-id')
-      .mockReturnValueOnce('task-created-id')
-      .mockReturnValueOnce('task-update-id')
-      .mockReturnValue('fallback-id');
 
-    ({ app } = await import('../../../../server/src/index'));
+    // Set up the mock BEFORE importing the app
+    jest.doMock('uuid', () => ({
+      v4: jest.fn()
+        .mockReturnValueOnce('event-seed-id')
+        .mockReturnValueOnce('task-created-id')
+        .mockReturnValueOnce('task-update-id')
+        .mockReturnValue('fallback-id'),
+    }));
+
+    const appModule = await import('../../../../server/src/index');
+    app = appModule.app;
+    resetState = appModule.resetState;
+    resetState();
+
+    const { v4: uuidv4 } = await import('uuid');
+    mockUuid = uuidv4 as jest.MockedFunction<typeof uuidv4>;
+  });
+
+  afterEach(() => {
+    jest.unmock('uuid');
   });
 
   it('POST /api/tasks creates a task when the associated event exists', async () => {
@@ -54,7 +62,7 @@ describe('happy_path_valid_task_creation', () => {
       status: 'To Do',
       eventId: 'event-seed-id',
     });
-    expect(mockUuid).to.have.callCount(2);
+    expect(mockUuid.mock.calls).to.have.lengthOf(2);
   });
 
   it('GET /api/tasks lists the newly created task and supports event_id filtering', async () => {

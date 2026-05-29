@@ -3,11 +3,14 @@ import { expect } from 'chai';
 
 describe('delete_existing_task', () => {
   let app: any;
+  let resetState: any;
 
   beforeEach(async () => {
     jest.resetModules();
     const serverModule = await import('../../../../server/src/index');
     app = serverModule.app;
+    resetState = serverModule.resetState;
+    resetState();
   });
 
   afterEach(() => {
